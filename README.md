@@ -249,14 +249,18 @@ agents/openai.yaml            UI metadata for compatible agents
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a branch: `git checkout -b feat/my-skill`.
-3. Add or edit skill files in `skills/`.
-4. If editing `tests/deep-ui/`, run `npm run typecheck` before submitting.
-5. Keep `SKILL.md` (instructions) and `tests/deep-ui/ui-deep-qa.spec.ts` (automation) in sync for the UI skill.
-6. Open a pull request — all skill additions and improvements are welcome.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
-No CLA, no bureaucracy. If your skill is useful, it gets merged.
+Quick version:
+
+1. Fork → `git checkout -b feat/my-skill`
+2. Add `skills/my-skill/SKILL.md` with valid frontmatter
+3. Wire it in `install.sh` and `skills/sys-admin/SKILL.md`
+4. Run `bash install.sh` + verify in a fresh Claude Code session
+5. `npm run typecheck` if you touched any `.ts` file
+6. Open a pull request
+
+No CLA, no bureaucracy. All skill additions welcome.
 
 ---
 
