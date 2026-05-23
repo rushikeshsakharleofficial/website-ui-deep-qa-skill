@@ -250,6 +250,73 @@ const FIX_RECOMMENDATIONS: Record<string, FixMeta> = {
     fix: 'Enable gzip/brotli compression; paginate large lists; trim unused response fields',
     effort: 'M',
   },
+  // Broken images
+  'broken-src': { fix: 'Fix broken image URL; verify file exists at path or CDN', effort: 'S' },
+  'empty-src': { fix: 'Remove img with empty src or set a valid placeholder URL', effort: 'XS' },
+  'missing-alt': { fix: 'Add descriptive alt text; use alt="" for decorative images', effort: 'XS', wcag: 'WCAG 1.1.1' },
+  'broken-background-image': { fix: 'Fix CSS background-image URL; verify asset path', effort: 'S' },
+  'picture-no-fallback': { fix: 'Add <img> fallback inside <picture> element', effort: 'XS' },
+  // Lazy images
+  'lazy-image-not-loaded': { fix: 'Fix lazy-load trigger — check IntersectionObserver threshold, data-src swap logic', effort: 'M' },
+  'images-below-fold-not-lazy': { fix: 'Add loading="lazy" to images below the fold to improve LCP', effort: 'XS' },
+  // Reduced motion (WCAG 2.3.3)
+  'reduced-motion-not-respected': { fix: 'Add @media (prefers-reduced-motion: reduce) CSS rule to disable/reduce animations', effort: 'S', wcag: 'WCAG 2.3.3' },
+  'animation-still-running': { fix: 'Set animation-play-state: paused or animation: none inside prefers-reduced-motion media query', effort: 'S', wcag: 'WCAG 2.3.3' },
+  // Responsive behavior
+  'mobile-nav-missing': { fix: 'Add hamburger menu / mobile drawer for nav at ≤768px breakpoint', effort: 'L' },
+  'tablet-nav-missing': { fix: 'Add collapsed navigation for tablet breakpoint (768px)', effort: 'M' },
+  'horizontal-overflow-at-1440': { fix: 'Find element wider than 1440px viewport; add max-width: 100%', effort: 'S' },
+  'horizontal-overflow-at-768': { fix: 'Fix layout overflow at 768px; use flex-wrap or responsive grid', effort: 'S' },
+  'horizontal-overflow-at-390': { fix: 'Fix layout overflow on mobile (390px); check fixed-width containers', effort: 'M' },
+  'text-too-small-at-768': { fix: 'Increase font-size to ≥12px at tablet breakpoint', effort: 'XS' },
+  'text-too-small-at-390': { fix: 'Increase font-size to ≥12px on mobile', effort: 'XS' },
+  'floating-ui-covers-cta': { fix: 'Adjust z-index or position of fixed element so it does not cover submit/CTA button', effort: 'S' },
+  'table-clipped-on-mobile': { fix: 'Wrap table in overflow-x: auto container for mobile scroll', effort: 'XS' },
+  'image-overflow-at-390': { fix: 'Add max-width: 100% to img elements; remove fixed pixel width', effort: 'XS' },
+  // Toasts
+  'toast-stack-overflow': { fix: 'Limit toast queue to max 3-5 items; dismiss oldest on new arrival', effort: 'S' },
+  'toast-poor-contrast': { fix: 'Increase toast text/background contrast to 4.5:1', effort: 'S', wcag: 'WCAG 1.4.3' },
+  'toast-covers-content': { fix: 'Move toast to bottom/top edge of screen (outside 20%-80% viewport height band)', effort: 'S' },
+  'toast-missing-role': { fix: 'Add role="status" (non-urgent) or role="alert" (urgent) to toast element', effort: 'XS', wcag: 'WCAG 4.1.3' },
+  'toast-not-dismissible': { fix: 'Add dismiss button with aria-label="Close" inside long-lived toasts', effort: 'XS' },
+  'toast-no-aria-live': { fix: 'Add aria-live="polite" region in document for toast announcements', effort: 'XS', wcag: 'WCAG 4.1.3' },
+  // Tables
+  'table-missing-label': { fix: 'Add <caption> or aria-label to table element', effort: 'XS', wcag: 'WCAG 1.3.1' },
+  'table-missing-headers': { fix: 'Add <th> elements as column/row headers', effort: 'S', wcag: 'WCAG 1.3.1' },
+  'table-th-missing-scope': { fix: 'Add scope="col" or scope="row" to all <th> elements', effort: 'XS', wcag: 'WCAG 1.3.1' },
+  'table-horizontal-overflow': { fix: 'Wrap table in overflow-x: auto container', effort: 'XS' },
+  'table-cell-nowrap': { fix: 'Remove white-space: nowrap from table cells; allow text to wrap', effort: 'XS' },
+  'table-duplicate-rows': { fix: 'Investigate deduplication logic in data fetch/rendering layer', effort: 'M' },
+  'table-sort-no-aria': { fix: 'Update aria-sort attribute on <th> after sort click (ascending/descending/none)', effort: 'S', wcag: 'WCAG 4.1.2' },
+  'table-pagination-no-change': { fix: 'Fix pagination next-page handler — verify route/query param updates and data re-fetches', effort: 'M' },
+  'table-no-empty-state': { fix: 'Add empty state UI when search/filter returns no results', effort: 'S' },
+  // PWA
+  'manifest-fetch-failed': { fix: 'Fix manifest URL in <link rel="manifest">; verify file is served correctly', effort: 'S' },
+  'sw-without-manifest': { fix: 'Add web app manifest for full PWA support', effort: 'M' },
+  'no-offline-fetch-handler': { fix: 'Add fetch event handler in service worker for offline fallback', effort: 'L' },
+  'missing-theme-color': { fix: 'Add <meta name="theme-color" content="#..."> for PWA browser chrome tinting', effort: 'XS' },
+  'missing-viewport-meta': { fix: 'Add <meta name="viewport" content="width=device-width, initial-scale=1">', effort: 'XS' },
+  'manifest-missing-name': { fix: 'Add name or short_name field to web app manifest', effort: 'XS' },
+  'manifest-missing-icons': { fix: 'Add 192x192 and 512x512 PNG icons to web app manifest', effort: 'S' },
+  'manifest-missing-start-url': { fix: 'Add start_url field to web app manifest', effort: 'XS' },
+  'manifest-missing-display': { fix: 'Add display: "standalone" or "minimal-ui" to web app manifest', effort: 'XS' },
+  // Auth surface
+  'password-field-exposed': { fix: 'Set type="password" on password input field — CRITICAL exposure', effort: 'XS' },
+  'no-forgot-password-link': { fix: 'Add "Forgot password?" link on login form', effort: 'XS' },
+  'token-in-localstorage': { fix: 'Move auth token from localStorage to httpOnly cookie; localStorage is XSS-accessible', effort: 'M' },
+  'token-in-sessionstorage': { fix: 'Move auth token from sessionStorage to httpOnly cookie', effort: 'M' },
+  'auth-cookie-not-httponly': { fix: 'Set HttpOnly flag on auth cookies to prevent JS access', effort: 'S' },
+  'protected-route-unauthenticated': { fix: 'Verify auth gate is enforced server-side; add redirect to login for unauthenticated access', effort: 'M' },
+  // Back/forward navigation
+  'back-navigation-broken': { fix: 'Fix history management — ensure popstate/navigation events correctly restore previous route state', effort: 'M' },
+  'page-blank-after-back': { fix: 'Handle popstate event to re-render route content; check SPA router history mode config', effort: 'M' },
+  'forward-navigation-broken': { fix: 'Ensure forward navigation (history.forward) works after back; check router history stack', effort: 'S' },
+  'page-blank-after-reload': { fix: 'Ensure server returns HTML for all SPA routes (not just index); configure server-side fallback', effort: 'M' },
+  // Edge states
+  'infinite-spinner': { fix: 'Add timeout/error fallback to loading state; show error UI if data fetch exceeds 10s', effort: 'M' },
+  'skeleton-not-resolved': { fix: 'Skeleton still visible after 3s — fix data loading or add error state fallback', effort: 'M' },
+  'error-boundary-visible': { fix: 'Fix JavaScript error causing component crash; check React/component error boundary logs', effort: 'M' },
+  '404-not-handled': { fix: 'Add 404 route handler returning proper not-found page (not homepage content)', effort: 'S' },
   // Performance
   'poor-lcp': {
     fix: 'Preload largest contentful image; defer non-critical scripts; check server response time',
@@ -515,6 +582,129 @@ function ingestNetwork(route: string, routeName: string): NormalizedFinding[] {
   return findings;
 }
 
+function ingestBrokenImages(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'broken-images', `${routeName}-broken-images.json`);
+  const data = safeReadJson<Array<{ severity?: string; type?: string; message?: string; src?: string; selector?: string }>>(filePath);
+  if (!data) return [];
+  return data.map(item => ({
+    route, source: 'broken-images',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'broken-image',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector || item.src,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestLazyImages(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'lazy-images', `${routeName}-lazy-images.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; src?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'lazy-images',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'lazy-image-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector || item.src,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestReducedMotion(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'reduced-motion', `${routeName}-reduced-motion.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'reduced-motion',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'motion-issue',
+    message: item.message || JSON.stringify(item),
+    evidencePath: filePath,
+  }));
+}
+
+function ingestResponsiveBehavior(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'responsive-behavior', `${routeName}-responsive-behavior.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; viewport?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'responsive-behavior',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'responsive-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestToasts(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'toasts', `${routeName}-toasts.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'toasts',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'toast-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestTables(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'tables', `${routeName}-tables.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'tables',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'table-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestAuth(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'auth', `${routeName}-auth.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'auth',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'auth-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
+function ingestBackForward(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'back-forward', `${routeName}-back-forward.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'back-forward',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'nav-issue',
+    message: item.message || JSON.stringify(item),
+    evidencePath: filePath,
+  }));
+}
+
+function ingestEdgeStates(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'edge-states', `${routeName}-edge-states.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'edge-states',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'edge-state-issue',
+    message: item.message || JSON.stringify(item),
+    evidencePath: filePath,
+  }));
+}
+
 // ─── Deduplication ────────────────────────────────────────────────────────────
 
 function dedupeFindings(findings: NormalizedFinding[]): NormalizedFinding[] {
@@ -641,6 +831,15 @@ export function writeFixPlan(routes: string[]): void {
       ...ingestSeo(route, routeName),
       ...ingestPerformance(route, routeName),
       ...ingestNetwork(route, routeName),
+      ...ingestBrokenImages(route, routeName),
+      ...ingestLazyImages(route, routeName),
+      ...ingestReducedMotion(route, routeName),
+      ...ingestResponsiveBehavior(route, routeName),
+      ...ingestToasts(route, routeName),
+      ...ingestTables(route, routeName),
+      ...ingestAuth(route, routeName),
+      ...ingestBackForward(route, routeName),
+      ...ingestEdgeStates(route, routeName),
     );
   }
 

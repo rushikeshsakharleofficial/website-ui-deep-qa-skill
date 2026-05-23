@@ -19,12 +19,24 @@ import { auditForms, triggerAndCaptureValidation } from './helpers/forms';
 import { discoverAndAuditOverlays } from './helpers/overlays';
 import { auditSeo } from './helpers/seo';
 import { auditDomSecurity, auditSecurityHeaders, auditMixedContent, scanUrlsForTokenLeaks as secScanUrls } from './helpers/security';
+import { auditBrokenImages } from './helpers/broken-images';
+import { auditLazyImages } from './helpers/lazy-images';
+import { testReducedMotion } from './helpers/reduced-motion';
+import { auditResponsiveBehavior } from './helpers/responsive-behavior';
+import { auditToasts } from './helpers/toasts';
+import { auditTables } from './helpers/tables';
+import { auditPWA } from './helpers/pwa';
+import { auditAuthSurface } from './helpers/auth';
+import { testBackForwardNavigation } from './helpers/back-forward';
+import { auditEdgeStates } from './helpers/edge-states';
 
 /**
  * Deep UI QA — enhanced entry point.
  *
  * Covers: layout, interactions, forms, overlays, network, storage,
- * accessibility, performance (Web Vitals), SEO, DOM security.
+ * accessibility, performance (Web Vitals), SEO, DOM security,
+ * broken images, lazy images, reduced motion, responsive behavior,
+ * toasts, tables, PWA, auth surface, back/forward navigation, edge states.
  */
 test.describe('Deep UI QA', () => {
   test('discover and test visible routes', async ({ page, context, baseURL }, testInfo) => {
@@ -63,6 +75,23 @@ test.describe('Deep UI QA', () => {
       // ── Screenshots: top + full page ─────────────────────────────────────
       await screenshotStep(page, route, '01-top');
       await fullPageScreenshot(page, route, '02-full-page');
+
+      // ── Broken images ────────────────────────────────────────────────────
+      // Detects: img with naturalWidth=0 (broken src), missing alt, empty src,
+      // broken CSS background-image, picture without fallback img.
+      // HIGH findings (broken/empty src) asserted below.
+      const brokenImagesFindings = await auditBrokenImages(page, route);
+      const brokenImagesHigh = brokenImagesFindings.filter(
+        (f) => f.severity === 'high'
+      );
+
+      // ── Lazy images ──────────────────────────────────────────────────────
+      // Scrolls to trigger lazy-loaded images, verifies they resolve.
+      // Returns to top after. HIGH = lazy image still unloaded after scroll.
+      const lazyImageReport = await auditLazyImages(page, route);
+      const lazyImagesHigh = lazyImageReport.findings.filter(
+        (f) => f.severity === 'high'
+      );
 
       // ── Accessibility ────────────────────────────────────────────────────
       const accessibilityIssues = await collectAccessibilityIssues(page);
@@ -126,6 +155,12 @@ test.describe('Deep UI QA', () => {
           `style.zoom="${zoomAfterTest}" — subsequent tests will run zoomed.`
       ).toMatch(/^(|1)$/);
 
+      // ── Reduced motion ───────────────────────────────────────────────────
+      // Emulates prefers-reduced-motion: reduce, checks if animations stop.
+      // Resets to no-preference after. WCAG 2.3.3.
+      // Medium findings only — not hard-asserted (too site-specific).
+      const reducedMotionReport = await testReducedMotion(page, route);
+
       // ── Theme comparison ─────────────────────────────────────────────────
       // Compares light vs dark rendering using prefers-color-scheme emulation.
       // Primary check: elements that become near-invisible (contrast <1.5) in
@@ -147,6 +182,15 @@ test.describe('Deep UI QA', () => {
       // re-assert emulation is light so visualRegression baselines are stable)
       await page.emulateMedia({ colorScheme: 'light' });
 
+      // ── Responsive behavior ──────────────────────────────────────────────
+      // Resizes viewport to desktop/tablet/mobile, checks nav, overflow,
+      // font size, floating-UI CTA overlap, table clipping.
+      // Restores 1440x900 after. HIGH = mobile nav completely missing.
+      const responsiveReport = await auditResponsiveBehavior(page, route);
+      const responsiveHigh = responsiveReport.findings.filter(
+        (f) => f.severity === 'high'
+      );
+
       // ── Interaction tests ────────────────────────────────────────────────
       await testVisibleLinks(page, route);
       await testVisibleButtons(page, route);
@@ -160,9 +204,32 @@ test.describe('Deep UI QA', () => {
       const overlaySummary = await discoverAndAuditOverlays(page, route);
       writeJsonArtifact('overlays', `${routeName}-overlays.json`, overlaySummary);
 
+      // ── Toast audit ──────────────────────────────────────────────────────
+      // Audits currently-visible toasts: contrast, position, role, dismiss,
+      // stack overflow. Inspection only — no toast triggering.
+      const toastReport = await auditToasts(page, route);
+
+      // ── Table audit ──────────────────────────────────────────────────────
+      // Structural checks + sort/pagination/search interactions on tables.
+      const tableReport = await auditTables(page, route);
+
       // ── SEO audit ────────────────────────────────────────────────────────
       const seoIssues = await auditSeo(page);
       writeJsonArtifact('seo', `${routeName}-seo.json`, seoIssues);
+
+      // ── PWA audit ────────────────────────────────────────────────────────
+      // Checks manifest, service worker, theme-color, viewport meta.
+      // Informational only for non-PWA sites.
+      const pwaReport = await auditPWA(page, route);
+
+      // ── Auth surface audit ───────────────────────────────────────────────
+      // Inspection only — no login/logout. Detects login page patterns,
+      // token-in-localStorage, password field exposure, auth cookies.
+      // CRITICAL = password field not type="password".
+      const authReport = await auditAuthSurface(page, route);
+      const authCritical = authReport.findings.filter(
+        (f) => f.severity === 'critical'
+      );
 
       // ── DOM security ─────────────────────────────────────────────────────
       const domSecFindings = await auditDomSecurity(page);
@@ -190,6 +257,22 @@ test.describe('Deep UI QA', () => {
       writeJsonArtifact('network', `${routeName}-duplicates.json`, duplicates);
       writeJsonArtifact('network', `${routeName}-large-payloads.json`, largePayloads);
 
+      // ── Back/forward navigation ──────────────────────────────────────────
+      // Clicks first internal link, tests goBack/goForward/reload.
+      // Navigates back to route after. HIGH = back broken / page blank.
+      const backForwardReport = await testBackForwardNavigation(page, route, baseURL || '/');
+      const backForwardHigh = backForwardReport.findings.filter(
+        (f) => f.severity === 'high'
+      );
+
+      // ── Edge states ──────────────────────────────────────────────────────
+      // Checks 404 handling, infinite spinner, skeleton stuck, error boundary,
+      // empty state indicators. Navigates to /nonexistent-404-test, returns.
+      const edgeStateReport = await auditEdgeStates(page, route, baseURL || '/');
+      const edgeStateHigh = edgeStateReport.findings.filter(
+        (f) => f.severity === 'high'
+      );
+
       // ── Console findings ─────────────────────────────────────────────────
       const consoleFindings = severeConsoleFindings(consoleMonitor.records, consoleMonitor.pageErrors);
       writeJsonArtifact('console', `${routeName}-console.json`, {
@@ -207,11 +290,21 @@ test.describe('Deep UI QA', () => {
         `- Zoom/scroll high+critical: ${zoomScrollHighFindings.length}\n` +
         `- Theme: dark-mode responsive=${themeReport.siteRespondsToDarkMode}, toggle=${themeReport.toggleFound}\n` +
         `- Theme findings: ${themeReport.issues.length} | High+critical: ${themeHighFindings.length}\n` +
+        `- Reduced motion: respects=${reducedMotionReport.siteRespectsReducedMotion}, animating=${reducedMotionReport.animatingElements}\n` +
+        `- Responsive: viewports=${responsiveReport.viewportsTested.length} | High: ${responsiveHigh.length} | Total: ${responsiveReport.findings.length}\n` +
+        `- Broken images: ${brokenImagesFindings.length} total | High: ${brokenImagesHigh.length}\n` +
+        `- Lazy images: ${lazyImageReport.totalLazyImages} lazy | Not loaded: ${lazyImageReport.notLoadedAfterScroll}\n` +
         `- Accessibility issues: ${accessibilityIssues.length}\n` +
         `- Focus visibility issues: ${keyboardResult.focusVisibilityIssues.length}\n` +
         `- Form findings: ${formFindings.length}\n` +
         `- Overlay findings: ${overlaySummary.findings.length}\n` +
+        `- Toasts: ${toastReport.toastsFound} found | Findings: ${toastReport.findings.length}\n` +
+        `- Tables: ${tableReport.tablesFound} found | Findings: ${tableReport.findings.length}\n` +
         `- SEO issues: ${seoIssues.length}\n` +
+        `- PWA: isPWA=${pwaReport.isPWA}, SW=${pwaReport.hasServiceWorker}, manifest=${pwaReport.hasManifest}\n` +
+        `- Auth: loginPage=${authReport.isLoginPage}, logoutBtn=${authReport.hasLogoutButton} | Critical: ${authCritical.length}\n` +
+        `- Back/forward: back=${backForwardReport.backWorked}, fwd=${backForwardReport.forwardWorked}, reload=${backForwardReport.reloadWorked}\n` +
+        `- Edge states: 404=${edgeStateReport.notFoundPageWorks}, infiniteSpinner=${edgeStateReport.infiniteSpinnerSuspected}\n` +
         `- Security findings (critical): ${criticalSec} / total: ${allSecFindings.length}\n` +
         `- Network records: ${network.records.length} | Leaks: ${leaks.length} | Duplicates: ${duplicates.length} | Large payloads: ${largePayloads.length}\n` +
         `- Console errors/page errors: ${consoleFindings.severeMessages.length + consoleFindings.pageErrors.length}\n` +
@@ -238,6 +331,37 @@ test.describe('Deep UI QA', () => {
       expect(
         accessibilityIssues,
         `Accessibility issues on ${route}:\n${JSON.stringify(accessibilityIssues, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        brokenImagesHigh,
+        `Broken images on ${route}:\n${JSON.stringify(brokenImagesHigh, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        lazyImagesHigh,
+        `Lazy images not loaded on ${route}:\n${JSON.stringify(lazyImagesHigh, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        authCritical,
+        `Critical auth surface issues on ${route}:\n${JSON.stringify(authCritical, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        backForwardHigh,
+        `Back/forward navigation broken on ${route}:\n${JSON.stringify(backForwardHigh, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        edgeStateHigh,
+        `Edge state issues on ${route}:\n${JSON.stringify(edgeStateHigh, null, 2)}`
+      ).toEqual([]);
+
+      // responsiveHigh and responsiveReport: assert HIGH (mobile nav missing).
+      expect(
+        responsiveHigh,
+        `Responsive layout broken on ${route}:\n${JSON.stringify(responsiveHigh, null, 2)}`
       ).toEqual([]);
 
       await visualRegression(page, route);
