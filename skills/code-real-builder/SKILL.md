@@ -35,7 +35,7 @@ Testing skill router. Use when the domain is ambiguous or multiple domains apply
 
 **REQUIRED SUB-SKILL:** Use `website-ui-deep-qa`
 
-Invoke as: `/website-ui-deep-qa <user request or URL>`
+Invoke as: `/code-real-builder:website-ui-deep-qa <user request or URL>`
 
 Covers 46 helper categories. Supports Playwright MCP (live), Playwright Test (automated), source-code inspection.
 

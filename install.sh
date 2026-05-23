@@ -17,11 +17,11 @@ echo "→ Installing code-real-builder (parent router)..."
 mkdir -p "$SKILLS_DIR/code-real-builder"
 cp "$REPO_DIR/skills/code-real-builder/SKILL.md" "$SKILLS_DIR/code-real-builder/SKILL.md"
 
-# ── 2. website-ui-deep-qa (UI testing subskill) ─────────────────────────────
-echo "→ Installing website-ui-deep-qa (UI subskill)..."
+# ── 2. website-ui-deep-qa (UI testing subskill — nested under code-real-builder) ─
+echo "→ Installing code-real-builder/website-ui-deep-qa (UI subskill)..."
 rsync -a --delete \
   "$REPO_DIR/" \
-  "$SKILLS_DIR/website-ui-deep-qa/" \
+  "$SKILLS_DIR/code-real-builder/website-ui-deep-qa/" \
   --exclude='.git' \
   --exclude='node_modules' \
   --exclude='qa-artifacts' \
@@ -31,5 +31,7 @@ rsync -a --delete \
 
 echo ""
 echo "✓ Done. Installed:"
-echo "   ~/.claude/skills/code-real-builder/   (parent — routes to subskills)"
-echo "   ~/.claude/skills/website-ui-deep-qa/  (UI subskill — 46 helpers)"
+echo "   ~/.claude/skills/code-real-builder/                      (parent — routes to subskills)"
+echo "   ~/.claude/skills/code-real-builder/website-ui-deep-qa/   (UI subskill — 46 helpers)"
+echo ""
+echo "   Invoke subskill as: /code-real-builder:website-ui-deep-qa"
