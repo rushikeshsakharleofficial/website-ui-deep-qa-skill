@@ -45,6 +45,11 @@ mkdir -p "$PLUGIN_CACHE/skills/smart-todo"
 cp "$REPO_DIR/skills/smart-todo/SKILL.md" \
    "$PLUGIN_CACHE/skills/smart-todo/SKILL.md"
 
+# api-deep-qa subskill
+mkdir -p "$PLUGIN_CACHE/skills/api-deep-qa"
+cp "$REPO_DIR/skills/api-deep-qa/SKILL.md" \
+   "$PLUGIN_CACHE/skills/api-deep-qa/SKILL.md"
+
 # Plugin CLAUDE.md
 cat > "$PLUGIN_CACHE/CLAUDE.md" << 'CLAUDE_EOF'
 # Sys Admin

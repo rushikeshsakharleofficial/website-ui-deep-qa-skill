@@ -32,6 +32,7 @@ Testing skill router. Use when domain is ambiguous or multiple domains apply. Fo
 | User experience — flows, drop-off, rage clicks | — | Planned |
 | Frontend components — contracts, render regression | — | Planned |
 | Deploy & infra — env hygiene, secrets in CI | — | Planned |
+| API — correctness, OWASP security, performance, response quality, URL hygiene, contracts | `api-deep-qa` | ✅ Active |
 | Task tracking — smart todo list, real-time status updates, blockers | `smart-todo` | ✅ Active |
 
 ## Active Subskill: UI / Web App
@@ -57,5 +58,13 @@ Covers 12 check categories: injection, schema, indexes, performance, migrations,
 Invoke as: `/sys-admin:smart-todo`
 
 Use at the start of any multi-step task. Decomposes work into a tracked list, updates status in real time, surfaces blockers, reports completion summary.
+
+## Active Subskill: API Deep QA
+
+**REQUIRED SUB-SKILL:** Use `api-deep-qa`
+
+Invoke as: `/sys-admin:api-deep-qa <base URL or repo path>`
+
+Covers 6 domains: endpoint correctness, OWASP API Top 10 security, performance/speed, response quality/tuning, URL structure/hygiene, contract integrity.
 
 **Partial coverage for planned domains:** DOM security, response leak scanning, CSRF, auth surface, network headers, and cookie audits are already in `website-ui-deep-qa`. For a deep security-only audit, note the gap and use what's available.
