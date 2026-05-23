@@ -42,6 +42,7 @@ import { auditSearch } from './helpers/search';
 import { auditScrollAxes } from './helpers/scroll-axes';
 import { auditButtonAnimations } from './helpers/button-animations';
 import { auditPopupQuality } from './helpers/popup-quality';
+import { auditContentClipping } from './helpers/content-clipping';
 
 /**
  * Deep UI QA — enhanced entry point.
@@ -344,6 +345,15 @@ test.describe('Deep UI QA', () => {
       // no-results state, keyboard submit, ARIA role=search.
       const searchReport = await auditSearch(page, route);
 
+      // ── Content clipping ─────────────────────────────────────────────────
+      // Detects elements clipped past viewport edge, text truncated by ellipsis,
+      // overflow:hidden containers clipping children, fixed header/footer covering
+      // content, image object-fit crop, absolute elements outside parent bounds.
+      // HIGH = element clipped right/left or content hidden under fixed header.
+      // All 7 checks run in ONE page.evaluate() round-trip.
+      const contentClippingReport = await auditContentClipping(page, route);
+      const contentClippingHigh = contentClippingReport.findings.filter((f) => f.severity === 'high');
+
       // ── Scroll axes ──────────────────────────────────────────────────────
       // Tests vertical + horizontal scroll on page and overflow-x containers.
       // HIGH = vertical scroll completely broken (page taller than viewport but scrollY stuck).
@@ -407,6 +417,7 @@ test.describe('Deep UI QA', () => {
         `- CSRF: ${csrfFindings.length} findings\n` +
         `- Sitemap/robots: sitemap=${sitemapReport.sitemapFound}, robots=${sitemapReport.robotsFound} | Findings: ${sitemapReport.findings.length}\n` +
         `- Search: found=${searchReport.searchFound} | Findings: ${searchReport.findings.length}\n` +
+        `- Content clipping: ${contentClippingReport.findings.length} total | High: ${contentClippingHigh.length}\n` +
         `- Scroll axes: v=${scrollAxesReport.verticalScrollWorks}, h=${scrollAxesReport.horizontalScrollWorks} | Containers: ${scrollAxesReport.scrollableContainersFound} | High: ${scrollAxesHigh.length}\n` +
         `- Button animations: checked=${buttonAnimReport.buttonsChecked} | Findings: ${buttonAnimReport.findings.length}\n` +
         `- Popup quality: ${popupQualityReport.popupsFound} popups | High: ${popupQualityHigh.length} | Findings: ${popupQualityReport.findings.length}\n` +
@@ -485,6 +496,11 @@ test.describe('Deep UI QA', () => {
       expect(
         cookieConsentHigh,
         `Cookie consent violations on ${route}:\n${JSON.stringify(cookieConsentHigh, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        contentClippingHigh,
+        `Content clipped on ${route}:\n${JSON.stringify(contentClippingHigh, null, 2)}`
       ).toEqual([]);
 
       expect(

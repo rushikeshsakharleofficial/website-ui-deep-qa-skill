@@ -377,6 +377,17 @@ const FIX_RECOMMENDATIONS: Record<string, FixMeta> = {
   'search-xss-reflection': { fix: 'Sanitize/encode search query before inserting into DOM — potential XSS vector', effort: 'M' },
   'search-keyboard-submit': { fix: 'Ensure pressing Enter in search input triggers search (submit event or keydown handler)', effort: 'XS' },
   'search-empty-query-unguarded': { fix: 'Guard against empty string search queries — show prompt or disable submit when input is empty', effort: 'XS' },
+  // Content clipping
+  'element-clipped-right': { fix: 'Add max-width: 100% or overflow-x: hidden to element; check fixed pixel widths wider than viewport', effort: 'S' },
+  'element-clipped-left': { fix: 'Check negative margins or transform: translateX pushing element off-screen left; add overflow: hidden to parent', effort: 'S' },
+  'fixed-element-above-viewport': { fix: 'Remove negative top value from fixed/sticky element; ensure it anchors to top: 0', effort: 'XS' },
+  'text-truncated': { fix: 'Increase container width, reduce font-size, or allow text to wrap (white-space: normal) so important text is fully visible', effort: 'S' },
+  'text-line-clamped': { fix: 'Review line-clamp value — ensure clamped text is not primary content; provide expand/read-more affordance if needed', effort: 'S' },
+  'overflow-hidden-clipping': { fix: 'Change overflow: hidden to overflow: auto/scroll on container, or increase container size to fit content', effort: 'S' },
+  'content-hidden-under-header': { fix: 'Add scroll-margin-top or padding-top equal to fixed header height to main content area', effort: 'S', wcag: 'WCAG 1.3.4' },
+  'content-hidden-under-footer': { fix: 'Add padding-bottom equal to fixed footer height to page content wrapper', effort: 'XS' },
+  'img-cover-default-position': { fix: 'Add object-position to img with object-fit:cover to control which part of image is shown (e.g. object-position: top)', effort: 'XS' },
+  'absolute-element-outside-parent': { fix: 'Set overflow: hidden on parent, or adjust absolute element position/size to stay within parent bounds', effort: 'S' },
   // Scroll axes
   'vertical-scroll-broken': { fix: 'Remove overflow: hidden from html/body; check no JS is blocking wheel/touch events', effort: 'M', wcag: 'WCAG 2.1.1' },
   'h-scroll-container-broken': { fix: 'Set overflow-x: auto on container with scrollWidth > clientWidth; verify scrollLeft mutation is not blocked', effort: 'S' },
@@ -790,6 +801,20 @@ function ingestEdgeStates(route: string, routeName: string): NormalizedFinding[]
   }));
 }
 
+function ingestContentClipping(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'content-clipping', `${routeName}-content-clipping.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'content-clipping',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'content-clipping-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
 function ingestScrollAxes(route: string, routeName: string): NormalizedFinding[] {
   const filePath = path.join('qa-artifacts', 'scroll-axes', `${routeName}-scroll-axes.json`);
   const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
@@ -1118,6 +1143,7 @@ export function writeFixPlan(routes: string[]): void {
       ...ingestCsrf(route, routeName),
       ...ingestSitemap(route, routeName),
       ...ingestSearch(route, routeName),
+      ...ingestContentClipping(route, routeName),
       ...ingestScrollAxes(route, routeName),
       ...ingestButtonAnimations(route, routeName),
       ...ingestPopupQuality(route, routeName),
