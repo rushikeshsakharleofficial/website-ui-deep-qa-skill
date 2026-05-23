@@ -524,7 +524,9 @@ export async function auditSidebar(page: Page, route: string): Promise<SidebarRe
 
     // ---- CHECK 8: Mobile drawer behavior ----
     try {
-      await page.setViewportSize({ width: 390, height: 844 });
+      if (page.viewportSize() !== null) {
+        await page.setViewportSize({ width: 390, height: 844 });
+      }
       await page.waitForTimeout(300);
 
       const mobileResult = await page.evaluate(() => {
@@ -736,7 +738,9 @@ export async function auditSidebar(page: Page, route: string): Promise<SidebarRe
       // skip mobile viewport block
     } finally {
       try {
-        await page.setViewportSize({ width: 1440, height: 900 });
+        if (page.viewportSize() !== null) {
+          await page.setViewportSize({ width: 1440, height: 900 });
+        }
         await page.waitForTimeout(200);
       } catch {
         // skip
@@ -789,7 +793,9 @@ export async function auditSidebar(page: Page, route: string): Promise<SidebarRe
     // top-level catch — partial report is still written
   } finally {
     try {
-      await page.setViewportSize({ width: 1440, height: 900 });
+      if (page.viewportSize() !== null) {
+        await page.setViewportSize({ width: 1440, height: 900 });
+      }
     } catch {
       // skip
     }

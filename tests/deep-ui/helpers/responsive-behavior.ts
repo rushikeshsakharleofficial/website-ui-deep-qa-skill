@@ -32,7 +32,9 @@ export async function auditResponsiveBehavior(page: Page, route: string): Promis
     for (const vp of VIEWPORTS) {
       const vpLabel = `${vp.width}x${vp.height}`;
       try {
-        await page.setViewportSize(vp);
+        if (page.viewportSize() !== null) {
+          await page.setViewportSize(vp);
+        }
         await page.waitForTimeout(300);
 
         viewportsTested.push(vpLabel);
@@ -240,7 +242,9 @@ export async function auditResponsiveBehavior(page: Page, route: string): Promis
     }
   } finally {
     // Restore original viewport
-    await page.setViewportSize({ width: 1440, height: 900 });
+    if (page.viewportSize() !== null) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
     await page.waitForTimeout(300);
   }
 

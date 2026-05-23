@@ -74,5 +74,15 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
       },
     },
+    {
+      // Uses actual OS screen resolution — for headful runs on real hardware.
+      // Multi-viewport helpers (typography, responsive-behavior, sidebar) will
+      // skip their setViewportSize calls when viewport is null.
+      name: 'chromium-native',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: null,
+      },
+    },
   ],
 });

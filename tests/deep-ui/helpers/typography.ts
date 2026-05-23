@@ -322,7 +322,9 @@ export async function auditTypography(page: Page, route: string): Promise<Typogr
 
   for (const vp of viewports) {
     try {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
+      if (page.viewportSize() !== null) {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+      }
       await page.waitForTimeout(300);
 
       const vpFindings = await page.evaluate(([vpName, vpWidth]) => {
@@ -429,7 +431,9 @@ export async function auditTypography(page: Page, route: string): Promise<Typogr
   }
 
   try {
-    await page.setViewportSize({ width: 1440, height: 900 });
+    if (page.viewportSize() !== null) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
     await page.waitForTimeout(200);
   } catch { /* ignore */ }
 
