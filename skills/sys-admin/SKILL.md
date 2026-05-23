@@ -25,6 +25,7 @@ Scan the user's request for trigger words. Each word maps to a subskill.
 | database, DB, SQL, PostgreSQL, MySQL, SQLite, MSSQL, schema, migration, ORM, Prisma, SQLAlchemy, ActiveRecord, TypeORM, GORM, Sequelize, Drizzle, Hibernate, query, index, table, column, foreign key, constraint, stored procedure, transaction, N+1, connection pool, backup, tenant isolation, RLS, MongoDB, Redis, Elasticsearch, NoSQL, pg_hba.conf, pgaudit, pg_stat_statements, bloat, EXPLAIN, orphaned, compliance, PCI, HIPAA, SOC2, bcrypt, argon2, encryption at rest | `sql-deep-qa` |
 | API, endpoint, REST, GraphQL, gRPC, HTTP, request, response, status code, JSON, JWT, token, rate limit, CORS, webhook, OpenAPI, Swagger, route, controller, payload, headers, auth, IDOR, BOLA, rate limiting, injection, fuzzing, contract, Pact, k6, Artillery | `api-deep-qa` |
 | plan, track, todo, checklist, steps, list, organize, manage tasks, what's left, progress | `smart-todo` |
+| plugin, skill, marketplace, install plugin, publish plugin, plugin.json, marketplace.json, SKILL.md, claude plugin, /plugin, add marketplace, submit plugin, plugin frontmatter, plugin manifest, plugin namespace, plugin scope | `marketplace` |
 
 ---
 
@@ -131,6 +132,7 @@ When smart-todo activates:
 | SQL / database | `sql-deep-qa` | 17 categories: injection (all types + sqlmap), schema, indexes, performance (pg_stat_statements, bloat), migrations (lock analysis), connections, sensitive data, access control, credentials, ORM (6 ORMs), backup, transactions, DB config security, audit logging, data integrity, NoSQL injection, privilege testing | ✅ Active |
 | REST / GraphQL / gRPC API | `api-deep-qa` | 18 categories: correctness, OWASP Top 10, JWT/OAuth2, GraphQL, gRPC, webhooks, rate limit bypass, fuzzing, load testing, contract testing, HTTP/2-3, observability | ✅ Active |
 | Task tracking | `smart-todo` | Mandatory for 3+ step tasks: decompose, track, update, surface blockers | ✅ Active (auto) |
+| Claude Code plugin / marketplace | `marketplace` | Full plugin lifecycle: discover, install, manage scopes, create plugin.json + SKILL.md, publish to GitHub, submit to community, validate, debug | ✅ Active |
 | Backend contracts, REST rate limits | — | — | Planned |
 | Security deep dive (OWASP, CVEs, dep scan) | — | — | Planned |
 | Test quality (coverage, flaky, mutation) | — | — | Planned |

@@ -50,6 +50,11 @@ mkdir -p "$PLUGIN_CACHE/skills/api-deep-qa"
 cp "$REPO_DIR/skills/api-deep-qa/SKILL.md" \
    "$PLUGIN_CACHE/skills/api-deep-qa/SKILL.md"
 
+# marketplace subskill
+mkdir -p "$PLUGIN_CACHE/skills/marketplace"
+cp "$REPO_DIR/skills/marketplace/SKILL.md" \
+   "$PLUGIN_CACHE/skills/marketplace/SKILL.md"
+
 # Plugin CLAUDE.md
 cat > "$PLUGIN_CACHE/CLAUDE.md" << 'CLAUDE_EOF'
 # Sys Admin
@@ -77,8 +82,10 @@ CLAUDE_EOF
 mkdir -p "$PLUGIN_CACHE/.claude-plugin"
 cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sys-admin",
-  "description": "Testing skills ecosystem. UI/web testing with 46 helpers, multi-domain testing router. Covers layout, a11y, forms, network, security, responsive, SEO, CSRF, auth, flow bypass.",
+  "displayName": "Sys Admin",
+  "description": "Testing skills ecosystem. UI/web testing with 46 helpers, multi-domain testing router, SQL audit (17 categories), API testing (18 categories), smart todo, and Claude Code marketplace guide.",
   "author": {
     "name": "Rushikesh Sakharle",
     "url": "https://github.com/rushikeshsakharleofficial"
@@ -87,8 +94,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
   "license": "MIT",
   "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin",
   "repository": "https://github.com/rushikeshsakharleofficial/sys-admin",
-  "category": "testing",
-  "tags": ["testing", "qa", "ui", "web", "accessibility", "security", "playwright"]
+  "keywords": ["testing", "qa", "ui", "web", "accessibility", "security", "playwright", "sql", "api", "marketplace"]
 }
 PLUGIN_EOF
 
