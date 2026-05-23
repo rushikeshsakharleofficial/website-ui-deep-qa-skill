@@ -58,6 +58,10 @@ description: Use when a website or web app needs QA — AI-generated or hand-bui
 
 All artifacts → `qa-artifacts/`. Fix plan → `qa-artifacts/reports/fix-plan.md`.
 
+## Ecosystem
+
+Part of the `code-real-builder` testing ecosystem. For multi-domain testing (UI + backend + security simultaneously), invoke `code-real-builder` first. For UI-only testing, invoke this skill directly.
+
 ## Requested task
 
 $ARGUMENTS

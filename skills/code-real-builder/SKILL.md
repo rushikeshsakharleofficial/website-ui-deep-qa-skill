@@ -1,41 +1,42 @@
 ---
 name: code-real-builder
-description: Use when asked to test, QA, audit, or validate any part of a codebase — UI, security, backend APIs, performance, accessibility, user experience, backtesting, or cross-browser behavior.
+description: Use when the testing domain is unclear, multiple domains apply at once (e.g. UI + security + backend), or the request is "test everything" / "full audit". For a single known domain, invoke the domain subskill directly instead.
 ---
 
 # Code Real Builder
 
 ## Overview
 
-Parent testing skill. Routes to the right subskill for each domain. Each subskill is a self-contained specialist — invoke it directly after routing.
+Testing skill router. Use when the domain is ambiguous or multiple domains apply. For a single clear domain, go directly to that subskill — skipping this router is correct.
 
-## Domain Routing
+## When to Use This Skill vs Going Direct
 
-| Testing target | Subskill |
-|----------------|----------|
-| Website / web app — layout, a11y, forms, network, security, responsive, SEO, CSRF, auth, flow bypass, 46 helpers | `website-ui-deep-qa` |
-| Backend REST/GraphQL — contracts, auth headers, rate limits, error handling, schema validation | *(planned)* |
-| Security — OWASP top 10, secrets scan, dep CVEs, injection, header/cookie audit | *(planned)* |
-| Test quality — coverage gaps, flaky tests, assertion quality, mutation score | *(planned)* |
-| Trading strategies — backtesting, P&L, lookahead bias, signal validation | *(planned)* |
-| User flows — onboarding completion, drop-off, rage clicks, session analysis | *(planned)* |
-| Frontend components — prop contracts, render regression, Storybook parity | *(planned)* |
-| Deploy & infra — env var hygiene, secrets in CI logs, rollback readiness | *(planned)* |
+| Situation | Action |
+|-----------|--------|
+| "Test our checkout page" — clearly UI | Go direct: `website-ui-deep-qa` |
+| "Full audit — UI, APIs, and security" — multiple domains | Use this router first |
+| "Test our app" — domain unclear | Use this router to pick the right subskill |
+| "Run backend contract tests" — no backend subskill yet | Use this router, note gap |
 
-## How to Use
+## Domain Map
 
-1. Identify domain from table above.
-2. Invoke the listed subskill.
+| Domain | Subskill | Status |
+|--------|----------|--------|
+| Website / web app — layout, a11y, forms, network, security, responsive, SEO, CSRF, auth, flow bypass, 46 helpers | `website-ui-deep-qa` | ✅ Active |
+| Backend REST/GraphQL, API contracts, rate limits | — | Planned |
+| Security deep dive — OWASP, dep CVEs, injection | — | Planned (partial: `website-ui-deep-qa` covers DOM security, headers, CSRF, auth) |
+| Test quality — coverage, flaky tests, mutation | — | Planned |
+| Backtesting — strategy, P&L, lookahead bias | — | Planned |
+| User experience — flows, drop-off, rage clicks | — | Planned |
+| Frontend components — contracts, render regression | — | Planned |
+| Deploy & infra — env hygiene, secrets in CI | — | Planned |
 
-### UI / Web App Testing
+## Active Subskill: UI / Web App
 
 **REQUIRED SUB-SKILL:** Use `website-ui-deep-qa`
 
-Covers 46 helper categories. Supports Playwright MCP (live), Playwright Test (automated), and source-code inspection.
+Invoke as: `/website-ui-deep-qa <user request or URL>`
 
-## Adding a New Domain
+Covers 46 helper categories. Supports Playwright MCP (live), Playwright Test (automated), source-code inspection.
 
-1. Build the subskill — install to `~/.claude/skills/<subskill-name>/`
-2. Add a row to the routing table above
-3. Add `**REQUIRED SUB-SKILL:** Use <subskill-name>` section below the table
-4. Run `bash install.sh` in repo to sync
+**Partial coverage for planned domains:** DOM security, response leak scanning, CSRF, auth surface, network headers, and cookie audits are already in `website-ui-deep-qa`. For a deep security-only audit, note the gap and use what's available.
