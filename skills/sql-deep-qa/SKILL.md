@@ -125,6 +125,50 @@ Stored user input retrieved from DB and later concatenated into another query �
 ### Pattern: Stored procedures
 
 - Parameters must be typed and bound — never concatenated inside `EXEC` / `CALL` body.
+- Check `SECURITY DEFINER` functions — they run as owner (elevated privilege). Verify no injection path inside.
+- Audit `GRANT EXECUTE ON FUNCTION` — ensure only intended roles have execute rights.
+
+```sql
+-- ❌ SECURITY DEFINER + injection
+CREATE OR REPLACE FUNCTION get_user(p_name text) RETURNS SETOF users
+SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY EXECUTE 'SELECT * FROM users WHERE name = ''' || p_name || '''';
+END;
+$$ LANGUAGE plpgsql;
+
+-- ✅ SECURITY DEFINER + parameterized
+CREATE OR REPLACE FUNCTION get_user(p_name text) RETURNS SETOF users
+SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM users WHERE name = p_name;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Automated scanning with sqlmap (authorized testing only)
+
+```bash
+# Basic scan — URL with injectable parameter
+sqlmap -u "http://localhost:3000/users?id=1" --batch
+
+# POST body scan
+sqlmap -u "http://localhost:3000/login" \
+  --data "username=admin&password=test" --batch
+
+# Test all injection types
+sqlmap -u "http://localhost:3000/api/users?id=1" \
+  --technique=BEUSTQ --level=3 --risk=2 --batch
+
+# Enumerate databases (read-only, safe)
+sqlmap -u "http://localhost:3000/api/users?id=1" --dbs --batch
+
+# WAF bypass with tamper scripts
+sqlmap -u "http://localhost:3000/api?id=1" \
+  --tamper="space2comment,between" --batch
+
+# Important: only run on systems you own or have written authorization for
+```
 
 **Severity: Critical for any confirmed injection surface.**
 
@@ -360,8 +404,11 @@ GROUP BY u.id, u.name;
 For every query flagged as suspicious:
 
 ```sql
--- PostgreSQL
+-- PostgreSQL — full analysis with buffer stats
 EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) <query>;
+
+-- Always run ANALYZE first if statistics may be stale
+ANALYZE <table_name>;
 
 -- MySQL
 EXPLAIN FORMAT=JSON <query>;
@@ -376,6 +423,114 @@ Flag:
 - `Hash Join` on large tables that could use an index
 - `Sort` operation with no supporting index
 - High `Buffers: shared hit` + `read` ratio (cache miss pressure)
+- `cost=0.00..5.04 rows=1 width=...` — cost is in arbitrary planner units; high costs signal expensive ops
+
+### pg_stat_statements queries (PostgreSQL)
+
+Requires `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;` in postgresql.conf (`shared_preload_libraries = 'pg_stat_statements'`).
+
+```sql
+-- Top 10 slowest queries by mean execution time
+WITH statements AS (
+  SELECT * FROM pg_stat_statements pss
+  JOIN pg_roles pr ON (userid = oid)
+  WHERE rolname = current_user
+)
+SELECT calls, mean_exec_time, query
+FROM statements
+WHERE calls > 500 AND shared_blks_hit > 0
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+
+-- Cache hit ratio — values <95% indicate memory pressure
+WITH statements AS (
+  SELECT * FROM pg_stat_statements pss
+  JOIN pg_roles pr ON (userid = oid)
+  WHERE rolname = current_user
+)
+SELECT calls, shared_blks_hit, shared_blks_read,
+  shared_blks_hit / (shared_blks_hit + shared_blks_read)::NUMERIC * 100 AS hit_cache_ratio,
+  query
+FROM statements
+WHERE calls > 500
+ORDER BY calls DESC, hit_cache_ratio ASC
+LIMIT 10;
+
+-- High variance queries (unpredictable performance — plan instability)
+WITH statements AS (
+  SELECT * FROM pg_stat_statements pss
+  JOIN pg_roles pr ON (userid = oid)
+  WHERE rolname = current_user
+)
+SELECT calls, min_exec_time, max_exec_time, mean_exec_time,
+  stddev_exec_time, (stddev_exec_time / mean_exec_time) AS coeff_of_variance, query
+FROM statements
+WHERE calls > 500
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+```
+
+### Additional query anti-patterns
+
+```sql
+-- ❌ Cartesian product (missing JOIN condition) — returns M×N rows
+SELECT * FROM users, orders;  -- forgot: WHERE users.id = orders.user_id
+
+-- ❌ Function on indexed column — index not used
+SELECT * FROM orders WHERE LOWER(email) = 'admin@example.com';
+-- ✅ Fix: create functional index
+CREATE INDEX idx_orders_email_lower ON orders(LOWER(email));
+
+-- ❌ Implicit type conversion — index not used
+SELECT * FROM orders WHERE user_id = '12345';  -- user_id is INT, '12345' is VARCHAR
+-- ✅ Fix: match types explicitly
+SELECT * FROM orders WHERE user_id = 12345;
+
+-- ❌ LIKE with leading wildcard — no index
+SELECT * FROM users WHERE email LIKE '%@example.com';
+-- ✅ For suffix search: use reverse index or pg_trgm
+CREATE INDEX idx_users_email_trgm ON users USING gin(email gin_trgm_ops);
+
+-- ❌ OR conditions preventing index use
+SELECT * FROM users WHERE id = 1 OR email = 'admin@example.com';
+-- ✅ Use UNION for index utilization
+SELECT * FROM users WHERE id = 1
+UNION
+SELECT * FROM users WHERE email = 'admin@example.com';
+```
+
+### Table and index bloat (PostgreSQL)
+
+Bloat accumulates when dead tuples (from UPDATE/DELETE + MVCC) are not vacuumed.
+
+```sql
+-- Requires: CREATE EXTENSION IF NOT EXISTS pgstattuple;
+-- Actual bloat (full scan — slow on large tables)
+SELECT objectname,
+  pg_size_pretty(size_bytes) AS object_size,
+  pg_size_pretty(free_space_bytes) AS reusable_space,
+  pg_size_pretty(dead_tuple_size_bytes) AS dead_tuple_space,
+  free_percent
+FROM (
+  SELECT relname AS objectname,
+    pg_relation_size(oid) AS size_bytes,
+    (pgstattuple(oid)).free_space AS free_space_bytes,
+    (pgstattuple(oid)).dead_tuple_len AS dead_tuple_size_bytes,
+    (pgstattuple(oid)).free_percent AS free_percent
+  FROM pg_class WHERE relkind = 'r'
+) t
+WHERE free_percent > 20
+ORDER BY size_bytes DESC
+LIMIT 20;
+
+-- Fast approximate bloat (PostgreSQL 9.5+)
+SELECT relname, pg_size_pretty(pg_relation_size(oid)),
+  (pgstattuple_approx(oid)).free_percent
+FROM pg_class WHERE relkind = 'r'
+ORDER BY pg_relation_size(oid) DESC LIMIT 20;
+```
+
+Flag tables with `free_percent > 30%` — indicates VACUUM not keeping up with write load.
 
 ### Smart query patterns to recommend
 
@@ -430,6 +585,35 @@ For each migration file, verify all of the following:
 | `ALTER COLUMN TYPE` | Rewrites table, long lock | Add new column, backfill, swap, drop old |
 | `ADD INDEX` without `CONCURRENTLY` (PostgreSQL) | Locks table for duration | `CREATE INDEX CONCURRENTLY` |
 | `ADD CONSTRAINT` on populated table | Validates all rows, may lock | `NOT VALID` then `VALIDATE CONSTRAINT` separately |
+
+### Lock timeout patterns (zero-downtime migrations)
+
+```sql
+-- ❌ ALTER TABLE without lock timeout — blocks entire table until complete
+ALTER TABLE orders ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'pending';
+
+-- ✅ Set lock timeout so migration fails fast instead of queuing indefinitely
+SET lock_timeout = '5s';
+SET statement_timeout = '30s';
+ALTER TABLE orders ADD COLUMN status VARCHAR(50);
+
+-- Then backfill + add NOT NULL in a subsequent migration:
+UPDATE orders SET status = 'pending' WHERE status IS NULL;
+ALTER TABLE orders ALTER COLUMN status SET NOT NULL;
+```
+
+PostgreSQL lock conflict: any `ALTER TABLE` acquiring `ACCESS EXCLUSIVE` blocks all reads and writes, plus queues all subsequent statements behind it.
+
+```sql
+-- ✅ CREATE INDEX without table lock (PostgreSQL)
+CREATE INDEX CONCURRENTLY idx_orders_status ON orders(status);
+
+-- ✅ ADD CONSTRAINT without immediate validation
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('pending','shipped','delivered')) NOT VALID;
+-- Later validate in separate transaction:
+ALTER TABLE orders VALIDATE CONSTRAINT orders_status_check;
+```
 
 ### Deploy order safety
 
@@ -763,6 +947,330 @@ Flag: balance/inventory updates that need serializable reads but use default iso
 
 ---
 
+---
+
+## Check 13 — Database configuration security
+
+### PostgreSQL hardening checklist
+
+**pg_hba.conf audit:**
+
+```bash
+# Locate and inspect the file
+psql -U postgres -c "SHOW hba_file;"
+cat /etc/postgresql/*/main/pg_hba.conf
+```
+
+Flag immediately:
+- `trust` auth method for any non-local connection — no password required
+- `md5` auth method — use `scram-sha-256` instead (md5 is broken)
+- `host all all 0.0.0.0/0 md5` — allows all IPs with weak hash
+- No `hostssl` entries — plain TCP allowed even with SSL configured
+
+```
+# ❌ Dangerous pg_hba.conf entry
+host    all    all    0.0.0.0/0    trust
+
+# ✅ Production-ready
+hostssl all    app_user    10.0.0.0/8    scram-sha-256
+local   all    postgres                  peer
+```
+
+**postgresql.conf security settings:**
+
+```bash
+psql -U postgres -c "SHOW ssl;"
+psql -U postgres -c "SHOW ssl_min_protocol_version;"
+psql -U postgres -c "SHOW log_connections;"
+psql -U postgres -c "SHOW log_disconnections;"
+psql -U postgres -c "SHOW password_encryption;"
+```
+
+Flag:
+- `ssl = off` — plaintext connections
+- `ssl_min_protocol_version` not set to `TLSv1.2` or `TLSv1.3`
+- `password_encryption = md5` — change to `scram-sha-256`
+- `log_connections = off` in production (can't audit who connected)
+- Port 5432 reachable from `0.0.0.0` (cloud security group)
+
+**Connection string audit in app code:**
+
+```bash
+grep -rn "sslmode=disable" --include="*.py" --include="*.ts" --include="*.go" .
+grep -rn "sslmode=disable" --include="*.env*" .
+```
+
+Flag `sslmode=disable` in any non-localhost connection string.
+
+---
+
+### MySQL/MariaDB hardening checklist
+
+```sql
+-- Run after install: mysql_secure_installation equivalent checks
+-- Check for anonymous users
+SELECT user, host FROM mysql.user WHERE user = '';
+
+-- Check remote root access
+SELECT user, host FROM mysql.user WHERE user = 'root' AND host != 'localhost';
+
+-- Check for test database
+SHOW DATABASES LIKE 'test';
+
+-- Check user privileges
+SELECT user, host, Grant_priv, Super_priv, File_priv
+FROM mysql.user WHERE user = 'app_user';
+
+-- Check SSL requirement
+SHOW VARIABLES LIKE 'require_secure_transport';
+
+-- Check bind address
+SHOW VARIABLES LIKE 'bind_address';
+```
+
+Flag:
+- Anonymous user accounts exist
+- Root accessible from non-localhost hosts
+- `test` database exists (accessible by all users by default)
+- `app_user` has `GRANT`, `SUPER`, or `FILE` privileges
+- `require_secure_transport = OFF` on production
+- `bind_address = 0.0.0.0` (binds to all interfaces)
+
+---
+
+## Check 14 — Audit logging and compliance
+
+### PostgreSQL audit logging (pgaudit)
+
+```bash
+# Check if pgaudit is installed
+psql -c "SELECT * FROM pg_extension WHERE extname = 'pgaudit';"
+psql -c "SHOW pgaudit.log;"
+```
+
+For PCI DSS / HIPAA / SOC2 compliance, verify `pgaudit.log` includes:
+- `READ` — all SELECT on PII/financial tables
+- `WRITE` — all INSERT/UPDATE/DELETE
+- `DDL` — schema changes
+- `ROLE` — privilege changes
+
+```sql
+-- Minimal pgaudit config for compliance
+-- In postgresql.conf:
+-- pgaudit.log = 'write, ddl, role'
+-- pgaudit.log_catalog = on
+-- pgaudit.log_relation = on
+
+-- Verify pgaudit is capturing logins
+SELECT * FROM pg_file_settings WHERE name LIKE 'pgaudit%';
+```
+
+### MySQL audit logging
+
+```sql
+-- Check if audit plugin is active
+SHOW PLUGINS;  -- look for 'audit_log' status = ACTIVE
+
+-- Check general log (performance cost — only in dev/short windows)
+SHOW VARIABLES LIKE 'general_log';
+SHOW VARIABLES LIKE 'general_log_file';
+```
+
+### Compliance checklist
+
+| Regulation | DB requirement |
+|-----------|----------------|
+| PCI DSS | Audit all access to cardholder data tables; encrypt CHD columns; restrict DB access to need-to-know; log all admin actions |
+| HIPAA | Audit access to PHI columns; encryption in transit (SSL) and at rest; access control; backup integrity verification |
+| SOC2 | Least-privilege DB users; audit logs retained ≥ 1 year; encryption at rest; change management for DDL |
+| GDPR | Ability to delete all user data by ID (right to erasure); log who accessed personal data; data minimization (no unnecessary PII columns) |
+
+---
+
+## Check 15 — Data integrity
+
+### Orphaned records (FK violations in data)
+
+```sql
+-- Find orders with no matching user
+SELECT COUNT(*) FROM orders o
+LEFT JOIN users u ON o.user_id = u.id
+WHERE u.id IS NULL;
+
+-- Generic orphan check pattern
+SELECT 'orphaned_orders' AS issue, COUNT(*)
+FROM orders o
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE id = o.user_id);
+
+-- Find orphaned child rows across all FK relationships
+SELECT
+  tc.table_name AS child_table,
+  kcu.column_name AS fk_column,
+  ccu.table_name AS parent_table,
+  ccu.column_name AS parent_column
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu
+  ON tc.constraint_name = ccu.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY';
+-- Then for each result: run the LEFT JOIN orphan check above
+```
+
+### Constraint validation
+
+```sql
+-- Check for rows violating CHECK constraints (after adding NOT VALID constraint)
+ALTER TABLE orders VALIDATE CONSTRAINT orders_status_check;
+-- If this fails: data violations exist
+
+-- Find duplicate values in "unique" columns without UNIQUE constraint
+SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;
+
+-- Nulls in NOT NULL columns (catch data load issues)
+SELECT COUNT(*) FROM users WHERE email IS NULL OR name IS NULL;
+```
+
+### Referential integrity audit queries
+
+```sql
+-- Tables with no PK
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE'
+  AND table_name NOT IN (
+    SELECT table_name FROM information_schema.table_constraints
+    WHERE constraint_type = 'PRIMARY KEY'
+  );
+
+-- FK columns missing indexes (cross-reference with Check 3)
+-- Orphaned rows count per FK relationship
+-- Rows with end_date < start_date (temporal data integrity)
+SELECT COUNT(*) FROM subscriptions WHERE end_date < start_date;
+```
+
+---
+
+## Check 16 — NoSQL injection (if applicable)
+
+Apply when the application uses MongoDB, Redis, Elasticsearch, or similar.
+
+### MongoDB injection
+
+```javascript
+// ❌ User input directly in query object
+const user = await db.collection('users').findOne({ username: req.body.username });
+// Attack: req.body.username = { "$ne": null }  → returns first user (auth bypass)
+
+// ❌ $where with user input — allows JS execution
+db.users.find({ $where: `this.username == '${username}'` });
+
+// ✅ Type validation before query
+const user = await db.collection('users').findOne({
+  username: String(req.body.username)  // ensure string type
+});
+// Better: use schema validation library (Joi, Zod) before querying
+```
+
+Detection patterns in code:
+```
+db.collection(   .findOne(    .find(    .aggregate(
+mongoose.find(   Model.findOne(   .updateOne(   .deleteOne(
+```
+
+Check: is `req.body.*` or `req.query.*` used directly as a MongoDB query filter without type enforcement?
+
+### Redis injection
+
+```bash
+# Risk: user controls Redis key patterns
+# ❌
+KEYS "user:${userInput}:*"   # userInput = "*" dumps all keys
+
+# ✅ Use SCAN with specific prefix + exact match
+SCAN 0 MATCH "user:12345:*" COUNT 100
+```
+
+Check: `KEYS` command usage in application code — always replace with `SCAN`.
+
+### Elasticsearch injection
+
+```javascript
+// ❌ Query string injection
+GET /users/_search?q=name:${userInput}
+// Attack: userInput = "admin OR _exists_:password"
+
+// ❌ Lucene injection in query_string
+{ "query": { "query_string": { "query": userInput } } }
+
+// ✅ Use match query (no injection surface)
+{ "query": { "match": { "name": userInput } } }
+```
+
+---
+
+## Check 17 — Privilege testing (least privilege)
+
+### Application user privilege audit
+
+```sql
+-- PostgreSQL: what can the app user do?
+SELECT grantee, table_schema, table_name, privilege_type
+FROM information_schema.role_table_grants
+WHERE grantee = 'app_user'
+ORDER BY table_name, privilege_type;
+
+-- Check superuser status
+SELECT usename, usesuper, usecreatedb, usecreaterole
+FROM pg_user WHERE usename = 'app_user';
+
+-- Check if app user owns any tables (bad — owner has implicit all permissions)
+SELECT tablename, tableowner
+FROM pg_tables
+WHERE schemaname = 'public' AND tableowner = 'app_user';
+```
+
+Flag:
+- App user is superuser (`usesuper = true`)
+- App user has `CREATE DATABASE` / `CREATE ROLE`
+- App user owns tables (should be owned by a separate migration user)
+- No separation between read-only replica user and read-write primary user
+- Migration user credentials same as app user credentials
+
+### Privilege escalation checks
+
+```sql
+-- PostgreSQL: functions with SECURITY DEFINER that app user can execute
+SELECT proname, proowner::regrole, prosecdef
+FROM pg_proc
+WHERE prosecdef = true;  -- SECURITY DEFINER functions
+
+-- Check if app user can create functions
+SELECT has_schema_privilege('app_user', 'public', 'CREATE');
+```
+
+### Ideal privilege model
+
+```sql
+-- Read-only replica user
+GRANT CONNECT ON DATABASE myapp TO readonly_user;
+GRANT USAGE ON SCHEMA public TO readonly_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO readonly_user;
+
+-- Application user (RW, no DDL)
+GRANT CONNECT ON DATABASE myapp TO app_user;
+GRANT USAGE ON SCHEMA public TO app_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user;
+
+-- Migration user (DDL, not used at runtime)
+GRANT ALL ON SCHEMA public TO migration_user;
+```
+
+---
+
 ## Defect format
 
 ```md
@@ -777,7 +1285,9 @@ Location:
 Check category:
 <injection | schema | index-missing | index-unnecessary | performance | migration |
  connection | sensitive-data | access-control | credentials | orm | backup |
- transaction | n+1 | pagination | query-pattern>
+ transaction | n+1 | pagination | query-pattern | db-config | audit-logging |
+ data-integrity | nosql-injection | privilege | bloat | fuzzing | stored-proc |
+ cryptographic-storage>
 
 Steps to reproduce:
 1. ...
@@ -801,19 +1311,30 @@ Recommendation:
 ## Severity definitions
 
 **Critical:**
-- SQL injection confirmed
+- SQL injection confirmed (any type: error-based, blind, union, OOB)
+- Second-order/stored SQL injection confirmed
+- NoSQL injection confirmed (auth bypass, `$where` JS execution)
 - Plaintext password storage
 - Cross-tenant data leak
+- RLS enabled but FORCE ROW LEVEL SECURITY missing (table owner bypasses RLS)
 - Credentials hardcoded in source or exposed in frontend bundle
-- Unauthenticated access to DB port
+- Unauthenticated access to DB port (pg_hba.conf `trust` auth)
+- `sslmode=disable` on external production connection
+- App connects as DB superuser
 
 **High:**
+- SECURITY DEFINER function injectable or bypasses RLS
 - Missing FK constraints causing silent orphan accumulation
 - Migration that will lock production table or fail on populated DB
 - N+1 on high-traffic route (>100 requests/min)
 - Sensitive columns (token, SSN) returned to API consumers
 - No connection pool in production (new connection per request)
 - Financial writes without transaction isolation
+- `pg_hba.conf` uses `md5` instead of `scram-sha-256`
+- No lock_timeout on DDL migrations (blocks reads on production)
+- Backup never tested for restore (WAL archive silently failing)
+- Anonymous DB user exists; remote root login enabled (MySQL)
+- MongoDB `$where` in user-controlled data (RCE risk)
 
 **Medium:**
 - Missing index on frequently queried FK or filter column
@@ -822,6 +1343,11 @@ Recommendation:
 - Missing rollback on non-trivial migration
 - Unnecessary index on low-cardinality or write-heavy column
 - Missing `WHERE` tenant filter on 1 of N queries (partial gap)
+- Table bloat >30% (vacuum not keeping up)
+- Cache hit ratio <90% in pg_stat_statements
+- Audit logging (pgaudit) not enabled on PCI/HIPAA systems
+- Orphaned FK records found in data
+- Dynamic SQL in stored procedure without parameterization
 
 **Low:**
 - Wrong column type (no data loss currently)
@@ -829,6 +1355,8 @@ Recommendation:
 - Redundant/duplicate index
 - Minor ORM over-fetch on low-traffic route
 - `SELECT *` in internal/admin route only
+- Missing `ANALYZE` causing stale statistics
+- Table or index bloat 10-30%
 
 ---
 

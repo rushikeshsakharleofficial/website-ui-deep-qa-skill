@@ -1,70 +1,230 @@
 ---
 name: sys-admin
-description: Use when the testing domain is unclear, multiple domains apply at once (e.g. UI + SQL + security), or the request is "test everything" / "full audit". For a single known domain, invoke the domain subskill directly instead.
+description: Use when the testing domain is unclear, multiple domains apply at once, or the request contains mixed signals — UI + SQL + API + security together. Also use when the user says "audit everything", "test our app", or does not name a specific domain. For a single clearly-named domain, go direct to that subskill instead.
 ---
 
-# Sys Admin
+# Sys Admin — Smart Router
 
-## Overview
+## Core rule
 
-Testing skill router. Use when domain is ambiguous or multiple domains apply. For a single clear domain, go directly to that subskill — skipping this router is correct.
+**Read the request. Match keywords. Pick subskills. Dispatch in order.**
 
-## When to Use This Skill vs Going Direct
+Never guess. Never skip. If two domains are mentioned, run both subskills.
 
-| Situation | Action |
-|-----------|--------|
-| "Test our checkout page" — clearly UI | Go direct: `website-ui-deep-qa` |
-| "Audit our database layer" — clearly SQL | Go direct: `sql-deep-qa` |
-| "Full audit — UI, DB, and security" — multiple domains | Use this router first |
-| "Test our app" — domain unclear | Use this router to pick the right subskill |
-| "Run backend contract tests" — no backend subskill yet | Use this router, note gap |
+---
 
-## Domain Map
+## Step 1 — Keyword extraction
 
-| Domain | Subskill | Status |
-|--------|----------|--------|
-| Website / web app — layout, a11y, forms, network, security, responsive, SEO, CSRF, auth, flow bypass, 46 helpers | `website-ui-deep-qa` | ✅ Active |
-| SQL database — schema, injection, indexes, migrations, ORM, multi-tenant isolation, credentials, backup | `sql-deep-qa` | ✅ Active |
-| Backend REST/GraphQL, API contracts, rate limits | — | Planned |
-| Security deep dive — OWASP, dep CVEs, injection | — | Planned (partial: `website-ui-deep-qa` covers DOM security, headers, CSRF, auth) |
-| Test quality — coverage, flaky tests, mutation | — | Planned |
-| Backtesting — strategy, P&L, lookahead bias | — | Planned |
-| User experience — flows, drop-off, rage clicks | — | Planned |
-| Frontend components — contracts, render regression | — | Planned |
-| Deploy & infra — env hygiene, secrets in CI | — | Planned |
-| API — correctness, OWASP security, performance, response quality, URL hygiene, contracts | `api-deep-qa` | ✅ Active |
-| Task tracking — smart todo list, real-time status updates, blockers | `smart-todo` | ✅ Active |
+Scan the user's request for trigger words. Each word maps to a subskill.
 
-## Active Subskill: UI / Web App
+### Keyword → subskill map
 
-**REQUIRED SUB-SKILL:** Use `website-ui-deep-qa`
+| User says any of these... | Route to |
+|---------------------------|----------|
+| page, website, web app, frontend, UI, layout, button, form, modal, navbar, sidebar, responsive, mobile, desktop, a11y, accessibility, SEO, Playwright, screenshot, CSS, HTML, click, hover, scroll, rendering, visual, component, breakpoint, cookie banner, toast, drawer, carousel | `website-ui-deep-qa` |
+| database, DB, SQL, PostgreSQL, MySQL, SQLite, MSSQL, schema, migration, ORM, Prisma, SQLAlchemy, ActiveRecord, TypeORM, GORM, Sequelize, Drizzle, Hibernate, query, index, table, column, foreign key, constraint, stored procedure, transaction, N+1, connection pool, backup, tenant isolation, RLS, MongoDB, Redis, Elasticsearch, NoSQL, pg_hba.conf, pgaudit, pg_stat_statements, bloat, EXPLAIN, orphaned, compliance, PCI, HIPAA, SOC2, bcrypt, argon2, encryption at rest | `sql-deep-qa` |
+| API, endpoint, REST, GraphQL, gRPC, HTTP, request, response, status code, JSON, JWT, token, rate limit, CORS, webhook, OpenAPI, Swagger, route, controller, payload, headers, auth, IDOR, BOLA, rate limiting, injection, fuzzing, contract, Pact, k6, Artillery | `api-deep-qa` |
+| plan, track, todo, checklist, steps, list, organize, manage tasks, what's left, progress | `smart-todo` |
 
-Invoke as: `/sys-admin:website-ui-deep-qa <user request or URL>`
+---
 
-Covers 46 helper categories. Supports Playwright MCP (live), Playwright Test (automated), source-code inspection.
+## Step 2 — Domain count decision
 
-## Active Subskill: SQL / Database
+```
+Count distinct domains matched:
 
-**REQUIRED SUB-SKILL:** Use `sql-deep-qa`
+0 domains → Ask one clarifying question (see Step 5)
+1 domain  → Dispatch that subskill directly
+2+ domains → Multi-domain dispatch (see Step 3)
+```
 
-Invoke as: `/sys-admin:sql-deep-qa <repo path or DB connection>`
+---
 
-Covers 12 check categories: injection, schema, indexes, performance, migrations, connections, sensitive data, access control, credentials, ORM patterns, backup, transactions.
+## Step 3 — Multi-domain dispatch order
 
-## Active Subskill: Smart Todo
+When multiple subskills are needed, always run in this order:
 
-**REQUIRED SUB-SKILL:** Use `smart-todo`
+```
+1. smart-todo      ← ALWAYS FIRST if task has 3+ steps (mandatory)
+2. sql-deep-qa     ← security/data risk highest; run before UI
+3. api-deep-qa     ← API surface before UI layer
+4. website-ui-deep-qa  ← UI/frontend last
+```
 
-Invoke as: `/sys-admin:smart-todo`
+**Rationale:** Data and API vulnerabilities are higher severity than UI defects. Fix the foundation before the surface.
 
-Use at the start of any multi-step task. Decomposes work into a tracked list, updates status in real time, surfaces blockers, reports completion summary.
+Example multi-domain dispatch:
 
-## Active Subskill: API Deep QA
+```
+Request: "Full audit of our checkout — the page, the API, and the database"
 
-**REQUIRED SUB-SKILL:** Use `api-deep-qa`
+Dispatch order:
+  1. /sys-admin:smart-todo        ← track the full audit
+  2. /sys-admin:sql-deep-qa       ← DB layer: injection, schema, indexes, tenant isolation
+  3. /sys-admin:api-deep-qa       ← API layer: OWASP, JWT, rate limiting, contracts
+  4. /sys-admin:website-ui-deep-qa ← UI layer: layout, forms, a11y, network, security headers
+```
 
-Invoke as: `/sys-admin:api-deep-qa <base URL or repo path>`
+---
 
-Covers 6 domains: endpoint correctness, OWASP API Top 10 security, performance/speed, response quality/tuning, URL structure/hygiene, contract integrity.
+## Step 4 — Signal patterns (beyond keywords)
 
-**Partial coverage for planned domains:** DOM security, response leak scanning, CSRF, auth surface, network headers, and cookie audits are already in `website-ui-deep-qa`. For a deep security-only audit, note the gap and use what's available.
+Some requests don't use exact keywords. Recognize these patterns:
+
+| Pattern | Route to |
+|---------|----------|
+| URL provided (`http://`, `https://`, `localhost:`) | `website-ui-deep-qa` first; if API endpoints visible also `api-deep-qa` |
+| Repo path provided (`./src`, `/app`, `~/project`) | Inspect structure → route by what's found |
+| "It looks broken" / "something is wrong" | Ask one question: UI, API, or DB? |
+| "Is it secure?" / "security audit" | All three: `sql-deep-qa` + `api-deep-qa` + `website-ui-deep-qa` |
+| "Is it fast?" / "why is it slow?" | `api-deep-qa` (Check 3 + 13) + `sql-deep-qa` (Check 4) |
+| "Does it work?" / "test everything" | All three in order |
+| "AI generated this" / "Cursor/v0/Bolt built this" | All three — AI-generated code commonly has issues in all layers |
+| "Pre-deploy review" / "before we ship" | All three + `smart-todo` to track findings |
+| "Database migration" | `sql-deep-qa` only (Check 5) |
+| "API is returning wrong data" | `api-deep-qa` (Check 1, 4) + `sql-deep-qa` (Check 3, 4) |
+| "Login is broken" | `api-deep-qa` (Check 2, 7) + `website-ui-deep-qa` (auth section) |
+| "Slow queries" | `sql-deep-qa` (Check 3, 4) only |
+| "CORS error" | `api-deep-qa` (Check 2, security misconfiguration) |
+| "Page layout broken" | `website-ui-deep-qa` only |
+| "Form not submitting" | `website-ui-deep-qa` (forms) + `api-deep-qa` (Check 1) |
+
+---
+
+## Step 5 — Clarifying question (0 domains matched)
+
+If no domain keyword is found, ask **one** question only:
+
+```
+"What layer should I audit?
+  A) Website / UI (pages, forms, layout, accessibility)
+  B) Database (schema, queries, migrations, security)
+  C) API (endpoints, auth, performance, security)
+  D) All of the above"
+```
+
+Do not ask multiple questions. Do not start work until the answer is received.
+
+---
+
+## Step 6 — smart-todo auto-activation rule
+
+**smart-todo activates automatically when any of these are true:**
+- Dispatching 2+ subskills (always 3+ steps)
+- Single subskill but the request implies multiple checks
+- User says "audit", "review", "test everything", "full check"
+- Task will produce a multi-section report
+
+When smart-todo activates:
+1. Create the master todo list FIRST
+2. Add one `[P1]` item per subskill to dispatch
+3. Add `[P1]` items for each major check category
+4. Add `[P2]` items for report writing, reviewing findings, prioritizing defects
+
+---
+
+## Domain map
+
+| Domain | Subskill | Checks | Status |
+|--------|----------|--------|--------|
+| Website / web app | `website-ui-deep-qa` | 46 helpers: layout, a11y, forms, network, security, responsive, SEO, CSRF, auth, flow bypass | ✅ Active |
+| SQL / database | `sql-deep-qa` | 17 categories: injection (all types + sqlmap), schema, indexes, performance (pg_stat_statements, bloat), migrations (lock analysis), connections, sensitive data, access control, credentials, ORM (6 ORMs), backup, transactions, DB config security, audit logging, data integrity, NoSQL injection, privilege testing | ✅ Active |
+| REST / GraphQL / gRPC API | `api-deep-qa` | 18 categories: correctness, OWASP Top 10, JWT/OAuth2, GraphQL, gRPC, webhooks, rate limit bypass, fuzzing, load testing, contract testing, HTTP/2-3, observability | ✅ Active |
+| Task tracking | `smart-todo` | Mandatory for 3+ step tasks: decompose, track, update, surface blockers | ✅ Active (auto) |
+| Backend contracts, REST rate limits | — | — | Planned |
+| Security deep dive (OWASP, CVEs, dep scan) | — | — | Planned |
+| Test quality (coverage, flaky, mutation) | — | — | Planned |
+| Frontend components (render regression) | — | — | Planned |
+| Deploy & infra (env hygiene, secrets in CI) | — | — | Planned |
+
+---
+
+## Worked examples
+
+### Example A: single domain, clear
+
+```
+Request: "Test the login page on http://localhost:3000/login"
+Keywords: "page", URL with path
+Domain count: 1 → website-ui-deep-qa
+
+Dispatch:
+  /sys-admin:website-ui-deep-qa http://localhost:3000/login
+```
+
+### Example B: single domain, implicit
+
+```
+Request: "Our N+1 queries are killing performance"
+Keywords: "N+1", "queries", "performance"
+Domain count: 1 → sql-deep-qa
+
+Dispatch:
+  /sys-admin:sql-deep-qa ./src
+```
+
+### Example C: two domains
+
+```
+Request: "Audit our REST API and check if the database queries are safe"
+Keywords: "REST API" → api-deep-qa, "database queries" → sql-deep-qa
+Domain count: 2 → multi-domain
+
+Dispatch order:
+  1. /sys-admin:smart-todo      ← track multi-domain audit
+  2. /sys-admin:sql-deep-qa     ← DB first (higher severity)
+  3. /sys-admin:api-deep-qa     ← API second
+```
+
+### Example D: all domains
+
+```
+Request: "Full security audit before we ship — AI built this with Cursor"
+Keywords: "security audit", "AI built" → all domains
+Domain count: 3 → full stack
+
+Dispatch order:
+  1. /sys-admin:smart-todo
+  2. /sys-admin:sql-deep-qa
+  3. /sys-admin:api-deep-qa
+  4. /sys-admin:website-ui-deep-qa
+```
+
+### Example E: no keywords
+
+```
+Request: "Something feels off with our app"
+Keywords: none matched
+Domain count: 0 → ask
+
+Response:
+  "What layer should I audit?
+    A) Website / UI   B) Database   C) API   D) All of the above"
+```
+
+### Example F: implicit all-domains signal
+
+```
+Request: "Is this safe to deploy?"
+Pattern match: "pre-deploy review"
+Domain count: all → full stack
+
+Dispatch order:
+  1. /sys-admin:smart-todo
+  2. /sys-admin:sql-deep-qa
+  3. /sys-admin:api-deep-qa
+  4. /sys-admin:website-ui-deep-qa
+```
+
+---
+
+## Anti-patterns — never do these
+
+| Wrong | Right |
+|-------|-------|
+| Pick one subskill when two keywords appear | Run both in dispatch order |
+| Ask multiple clarifying questions | Ask exactly one question with A/B/C/D |
+| Start work before smart-todo on multi-domain | smart-todo ALWAYS first |
+| Route "is it secure?" to only website-ui-deep-qa | Security = all three layers |
+| Ignore "AI generated" signal | AI-generated code = assume all-domain issues |
+| Skip smart-todo because "it's just a quick audit" | 3+ steps → smart-todo. No exceptions. |
