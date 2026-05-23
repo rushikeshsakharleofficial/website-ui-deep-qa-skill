@@ -43,6 +43,7 @@ import { auditScrollAxes } from './helpers/scroll-axes';
 import { auditButtonAnimations } from './helpers/button-animations';
 import { auditPopupQuality } from './helpers/popup-quality';
 import { auditContentClipping } from './helpers/content-clipping';
+import { auditUserLifecycle } from './helpers/user-lifecycle';
 
 /**
  * Deep UI QA — enhanced entry point.
@@ -247,6 +248,21 @@ test.describe('Deep UI QA', () => {
         (f) => f.severity === 'critical'
       );
 
+      // ── User lifecycle ───────────────────────────────────────────────────
+      // Detects user management panel (create user form, user list, permission UI,
+      // session management surface, logout button, login page).
+      // Audits 10 checks: form fields, email validation, role UI, session cookies,
+      // logout via GET (CSRF risk), no-logout on auth pages, MFA presence.
+      // CRITICAL = password field not type="password" in create-user form.
+      // Never submits forms or creates real users.
+      const userLifecycleReport = await auditUserLifecycle(page, route);
+      const userLifecycleCritical = userLifecycleReport.findings.filter(
+        (f) => f.severity === 'critical'
+      );
+      const userLifecycleHigh = userLifecycleReport.findings.filter(
+        (f) => f.severity === 'high'
+      );
+
       // ── DOM security ─────────────────────────────────────────────────────
       const domSecFindings = await auditDomSecurity(page);
       const secHeaderFindings = await auditSecurityHeaders(network.responses);
@@ -403,6 +419,7 @@ test.describe('Deep UI QA', () => {
         `- SEO issues: ${seoIssues.length}\n` +
         `- PWA: isPWA=${pwaReport.isPWA}, SW=${pwaReport.hasServiceWorker}, manifest=${pwaReport.hasManifest}\n` +
         `- Auth: loginPage=${authReport.isLoginPage}, logoutBtn=${authReport.hasLogoutButton} | Critical: ${authCritical.length}\n` +
+        `- User lifecycle: mgmt=${userLifecycleReport.userManagementDetected}, createForm=${userLifecycleReport.createUserFormDetected}, perms=${userLifecycleReport.permissionUIDetected} | Critical: ${userLifecycleCritical.length} | High: ${userLifecycleHigh.length}\n` +
         `- Back/forward: back=${backForwardReport.backWorked}, fwd=${backForwardReport.forwardWorked}, reload=${backForwardReport.reloadWorked}\n` +
         `- Edge states: 404=${edgeStateReport.notFoundPageWorks}, infiniteSpinner=${edgeStateReport.infiniteSpinnerSuspected}\n` +
         `- Security findings (critical): ${criticalSec} / total: ${allSecFindings.length}\n` +
@@ -460,6 +477,16 @@ test.describe('Deep UI QA', () => {
       expect(
         authCritical,
         `Critical auth surface issues on ${route}:\n${JSON.stringify(authCritical, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        userLifecycleCritical,
+        `Critical user lifecycle issues on ${route}:\n${JSON.stringify(userLifecycleCritical, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        userLifecycleHigh,
+        `High user lifecycle issues on ${route}:\n${JSON.stringify(userLifecycleHigh, null, 2)}`
       ).toEqual([]);
 
       expect(

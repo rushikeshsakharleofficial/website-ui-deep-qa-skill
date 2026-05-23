@@ -1,9 +1,56 @@
 ---
 name: website-ui-deep-qa
-description: Deeply test and audit website UIs using Playwright MCP or Playwright Test. Use for full UI QA of AI-generated websites, including layout alignment, scrolling, clicks, forms, popups, modals, drawers, sidebars, top bars, footers, floating UI, responsive behavior, accessibility, network behavior, cookies, cache, storage, security leaks, performance, SEO basics, and final defect reporting.
+description: Use when a website or web app needs QA — AI-generated or hand-built — and you see broken layout, unresponsive buttons, clipped content, broken forms, inaccessible elements, exposed tokens, poor mobile rendering, or missing error states. Also triggers on: post-deploy smoke test, PR visual review, or "does this site actually work?" audit.
 ---
 
 # Website UI Deep QA
+
+## Quick Reference — 40 helper categories
+
+| Category | Helper | Artifact folder | Asserts HIGH? |
+|----------|--------|----------------|---------------|
+| Screenshots | screenshots.ts | screenshots/ | — |
+| Layout issues | layout.ts | layout/ | ✅ |
+| Content clipping | content-clipping.ts | content-clipping/ | ✅ |
+| Scroll axes (H+V) | scroll-axes.ts | scroll-axes/ | ✅ |
+| Zoom + scroll | zoom-scroll.ts | zoom-scroll/ | ✅ |
+| Responsive | responsive-behavior.ts | responsive-behavior/ | ✅ |
+| Interactions | interactions.ts | — | — |
+| Button animations | button-animations.ts | button-animations/ | — |
+| Forms | forms.ts | forms/ | — |
+| Overlays | overlays.ts | overlays/ | — |
+| Popup quality | popup-quality.ts | popup-quality/ | ✅ |
+| Toasts | toasts.ts | toasts/ | — |
+| Tables | tables.ts | tables/ | — |
+| Carousels | carousel.ts | carousel/ | — |
+| Media players | media-player.ts | media-player/ | — |
+| Search | search.ts | search/ | — |
+| Broken images | broken-images.ts | broken-images/ | ✅ |
+| Lazy images | lazy-images.ts | lazy-images/ | ✅ |
+| Accessibility | accessibility.ts | accessibility/ | ✅ |
+| Keyboard focus | accessibility.ts | accessibility/ | — |
+| Reduced motion | reduced-motion.ts | reduced-motion/ | — |
+| Theme comparison | theme-comparison.ts | theme-comparison/ | ✅ |
+| SEO | seo.ts | seo/ | — |
+| PWA | pwa.ts | pwa/ | — |
+| Security (DOM) | security.ts | security/ | ✅ |
+| Network | network.ts | network/ | ✅ |
+| Storage | storage.ts | storage/ | — |
+| Console | console.ts | console/ | ✅ |
+| Performance | performance.ts | performance/ | — |
+| Auth surface | auth.ts | auth/ | ✅ (critical) |
+| User lifecycle | user-lifecycle.ts | user-lifecycle/ | ✅ (critical) |
+| Back/forward nav | back-forward.ts | back-forward/ | ✅ |
+| Edge states | edge-states.ts | edge-states/ | ✅ |
+| Placeholder content | placeholder-content.ts | placeholder-content/ | ✅ |
+| Link checker | link-checker.ts | link-checker/ | ✅ |
+| Cookie consent | cookie-consent.ts | cookie-consent/ | ✅ |
+| HTML validation | html-validation.ts | html-validation/ | ✅ |
+| CSRF | csrf.ts | csrf/ | — |
+| Sitemap/robots | sitemap.ts | sitemap/ | — |
+| Print media | print-media.ts | print-media/ | — |
+
+All artifacts → `qa-artifacts/`. Fix plan → `qa-artifacts/reports/fix-plan.md`.
 
 ## Requested task
 

@@ -377,6 +377,37 @@ const FIX_RECOMMENDATIONS: Record<string, FixMeta> = {
   'search-xss-reflection': { fix: 'Sanitize/encode search query before inserting into DOM — potential XSS vector', effort: 'M' },
   'search-keyboard-submit': { fix: 'Ensure pressing Enter in search input triggers search (submit event or keydown handler)', effort: 'XS' },
   'search-empty-query-unguarded': { fix: 'Guard against empty string search queries — show prompt or disable submit when input is empty', effort: 'XS' },
+  // User lifecycle
+  'create-user-password-exposed': { fix: 'Set type="password" on password input in create-user form — CRITICAL: credential visible in clear text', effort: 'XS' },
+  'create-user-no-email-field': { fix: 'Add email input field to create-user form', effort: 'S' },
+  'create-user-no-password-field': { fix: 'Add password input field (type="password") to create-user form', effort: 'S' },
+  'create-user-no-password-confirm': { fix: 'Add password confirmation field to prevent typo lockouts on account creation', effort: 'XS' },
+  'create-user-no-role-field': { fix: 'Add role/permission selector to create-user form so every new user gets a defined access level', effort: 'M' },
+  'create-user-no-email-validation': { fix: 'Add email format validation on create-user form; fire on blur or before submit', effort: 'S' },
+  'create-user-no-password-hint': { fix: 'Add password strength requirements hint near password field (min length, complexity)', effort: 'XS' },
+  'create-user-no-name-field': { fix: 'Add display name / full name field to create-user form', effort: 'XS' },
+  'create-user-btn-no-form': { fix: '"Create user" button exists but no form panel found — verify create-user modal/page is reachable', effort: 'M' },
+  'single-role-option': { fix: 'Review role design — only one assignable role suggests missing RBAC; add at least Viewer/Editor/Admin tiers', effort: 'L' },
+  'role-no-description': { fix: 'Add tooltip or helper text describing each role\'s permissions in the role selector', effort: 'S' },
+  'admin-role-no-confirmation': { fix: 'Add confirmation dialog before assigning Owner/Super-admin role — irreversible elevated access needs explicit consent', effort: 'S' },
+  'user-list-no-search': { fix: 'Add search/filter input to user list for organisations with many users', effort: 'M' },
+  'user-list-no-pagination': { fix: 'Add pagination or virtualised scroll to user list — long lists degrade performance and UX', effort: 'M' },
+  'user-delete-no-label': { fix: 'Add aria-label="Delete user [name]" to delete button so screen readers identify the target', effort: 'XS', wcag: 'WCAG 4.1.2' },
+  'bulk-action-no-confirm': { fix: 'Add confirmation dialog before executing bulk user actions (delete, role change, suspend)', effort: 'S' },
+  'user-list-no-email-column': { fix: 'Add email column to user list so admins can identify accounts', effort: 'XS' },
+  'auth-token-in-localstorage': { fix: 'Move auth token from localStorage to httpOnly cookie — localStorage is accessible to any JS on the page (XSS risk)', effort: 'M' },
+  'auth-token-in-sessionstorage': { fix: 'Move auth token from sessionStorage to httpOnly cookie', effort: 'M' },
+  'no-logout-all-sessions': { fix: 'Add "Log out of all devices" option in account security settings to revoke all active sessions', effort: 'M' },
+  'session-no-revoke-button': { fix: 'Add per-session Revoke button in active sessions list so users can terminate individual sessions', effort: 'S' },
+  'session-no-metadata': { fix: 'Show browser, IP, and last-active time for each session entry so users can identify unknown sessions', effort: 'M' },
+  'login-no-rate-limit-indicator': { fix: 'Add CAPTCHA or account lockout messaging after failed attempts; implement server-side rate limiting', effort: 'L' },
+  'login-no-forgot-password': { fix: 'Add "Forgot password?" link on login form', effort: 'XS' },
+  'login-password-no-autocomplete': { fix: 'Add autocomplete="current-password" to login password field for password manager support', effort: 'XS', wcag: 'WCAG 1.3.5' },
+  'login-username-no-autocomplete': { fix: 'Add autocomplete="email" or autocomplete="username" to login username field', effort: 'XS', wcag: 'WCAG 1.3.5' },
+  'no-logout-button': { fix: 'Add clearly visible logout/sign-out option accessible from all authenticated pages', effort: 'S' },
+  'logout-via-get': { fix: 'Change logout to POST form or include CSRF token — GET logout is vulnerable to CSRF via image/link injection', effort: 'S' },
+  'logout-not-keyboard-accessible': { fix: 'Ensure logout button is reachable via Tab key and has tabindex ≥ 0', effort: 'XS', wcag: 'WCAG 2.1.1' },
+  'security-questions-found': { fix: 'Replace security questions with email-based reset or TOTP MFA — questions are guessable and phishable', effort: 'L' },
   // Content clipping
   'element-clipped-right': { fix: 'Add max-width: 100% or overflow-x: hidden to element; check fixed pixel widths wider than viewport', effort: 'S' },
   'element-clipped-left': { fix: 'Check negative margins or transform: translateX pushing element off-screen left; add overflow: hidden to parent', effort: 'S' },
@@ -801,6 +832,20 @@ function ingestEdgeStates(route: string, routeName: string): NormalizedFinding[]
   }));
 }
 
+function ingestUserLifecycle(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'user-lifecycle', `${routeName}-user-lifecycle.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'user-lifecycle',
+    severity: (item.severity as Severity) || 'medium',
+    type: item.type || 'user-lifecycle-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
 function ingestContentClipping(route: string, routeName: string): NormalizedFinding[] {
   const filePath = path.join('qa-artifacts', 'content-clipping', `${routeName}-content-clipping.json`);
   const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
@@ -1143,6 +1188,7 @@ export function writeFixPlan(routes: string[]): void {
       ...ingestCsrf(route, routeName),
       ...ingestSitemap(route, routeName),
       ...ingestSearch(route, routeName),
+      ...ingestUserLifecycle(route, routeName),
       ...ingestContentClipping(route, routeName),
       ...ingestScrollAxes(route, routeName),
       ...ingestButtonAnimations(route, routeName),
