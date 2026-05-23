@@ -80,8 +80,8 @@ cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
   },
   "version": "1.0.0",
   "license": "MIT",
-  "homepage": "https://github.com/rushikeshsakharleofficial/code-real-builder",
-  "repository": "https://github.com/rushikeshsakharleofficial/code-real-builder",
+  "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin",
+  "repository": "https://github.com/rushikeshsakharleofficial/sys-admin",
   "category": "testing",
   "tags": ["testing", "qa", "ui", "web", "accessibility", "security", "playwright"]
 }
@@ -102,7 +102,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/marketplace.json" << 'MARKET_EOF'
       "description": "Testing skills ecosystem. Use sys-admin:sys-admin for multi-domain testing, sys-admin:website-ui-deep-qa for UI/web testing.",
       "source": "./",
       "category": "testing",
-      "homepage": "https://github.com/rushikeshsakharleofficial/code-real-builder"
+      "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin"
     }
   ]
 }
@@ -146,7 +146,7 @@ with open(markets_file) as f:
 markets["sys-admin"] = {
     "source": {
         "source": "github",
-        "repo": "rushikeshsakharleofficial/code-real-builder"
+        "repo": "rushikeshsakharleofficial/sys-admin"
     },
     "installLocation": "$HOME/.claude/plugins/marketplaces/sys-admin",
     "lastUpdated": now
