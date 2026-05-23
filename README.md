@@ -1,109 +1,108 @@
-# Website UI Deep QA Skill
+<div align="center">
 
-A Claude Code and Codex-compatible skill for deep, evidence-based UI QA of websites and web apps — especially AI-generated UIs that may look complete but contain broken interactions, non-functional controls, unsafe browser storage, or poor accessibility.
+# sys-admin
+
+**A Claude Code plugin with QA, database auditing, and task-tracking skills.**  
+Install once. Invoke from any project. Add your own skills freely.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+</div>
 
 ---
 
-## What it tests
+## What is this?
 
-| Area | Minimum | Full coverage |
-|:-----|:--------|:--------------|
-| Routes | Home + nav links | Source route tree, sitemap, auth routes |
-| Layout | Header / sidebar / main / footer | Every scroll point and breakpoint |
-| Responsive | Desktop + mobile | 5-viewport matrix + cross-browser smoke |
-| Forms | Empty + invalid + valid | Server error, slow network, double-submit |
-| Overlays | Open + close + Escape | Focus trap, `aria-modal`, nested overlays |
-| Network | Failures + leaks | Duplicate calls, large payloads, auth leakage |
-| Storage | Cookies + local/session | IndexedDB, Cache API, logout clearing |
-| Security | Token-in-URL + DOM secrets | Security headers, iframe sandbox, mixed content |
-| Accessibility | Labels + keyboard | Focus order, ARIA, landmarks, contrast |
-| Performance | No infinite loading | Web Vitals (TTFB, FCP, LCP, CLS), DOM growth |
-| SEO | Title + favicon | Description, canonical, OG, `noindex` check |
-| Console | Errors + page errors | React key warnings, hydration, CSP violations |
+`sys-admin` is an open-source Claude Code plugin that bundles a growing set of QA and productivity skills. Each skill is a focused instruction file Claude loads on demand — no runtime, no server, no build step.
 
-## Requirements
+**100% open. Fork it, modify it, add your own skills. MIT licensed.**
 
-- Node.js 18+
-- npm
+---
+
+## Skills
+
+| Skill | Invocation | What it does |
+|:------|:-----------|:-------------|
+| Router | `/sys-admin:sys-admin` | Picks the right subskill when the domain is unclear or multiple apply |
+| UI / Web QA | `/sys-admin:website-ui-deep-qa` | Deep QA of any website: layout, forms, a11y, network, security, responsive, SEO — 46 check categories with Playwright |
+| SQL / DB audit | `/sys-admin:sql-deep-qa` | Audits the SQL layer: injection, schema, indexes, migrations, ORM patterns, multi-tenancy, credentials — 12 check categories |
+| Smart Todo | `/sys-admin:smart-todo` | **Mandatory for any 3+ step task.** Decomposes work into a tracked list, updates status in real time, surfaces blockers |
+
+---
 
 ## Installation
 
-### As a Claude Code personal skill
+**Requirements:** Claude Code CLI, Node.js 18+, npm
 
 ```bash
-git clone <repo-url> website-ui-deep-qa
-mkdir -p ~/.claude/skills
-cp -R website-ui-deep-qa ~/.claude/skills/
+git clone https://github.com/rushikeshsakharleofficial/sys-admin.git
+cd sys-admin
+bash install.sh
 ```
 
-Invoke from any Claude Code session:
+Restart Claude Code. All four skills appear in the `/` picker under the `sys-admin:` namespace.
+
+> The script copies skill files to `~/.claude/plugins/cache/sys-admin/`, writes manifests, registers the plugin, and enables it automatically.
+
+---
+
+## Usage
+
+### UI / Web QA
 
 ```text
-/website-ui-deep-qa Test this app deeply with Playwright MCP and produce a defect report.
+/sys-admin:website-ui-deep-qa Test the checkout flow on http://localhost:3000
 ```
 
-### As a Codex skill
+Supports three modes:
+
+- **Playwright MCP** (live browser, exploratory) — preferred when MCP is connected
+- **Playwright Test** (automated, repeatable) — runs `tests/deep-ui/ui-deep-qa.spec.ts`
+- **Source inspection** — static analysis when no running app is available
 
 ```bash
-git clone <repo-url> website-ui-deep-qa
-mkdir -p ~/.codex/skills
-cp -R website-ui-deep-qa ~/.codex/skills/
-```
-
-Invoke:
-
-```text
-$website-ui-deep-qa Test this app deeply and report all UI, network, storage, accessibility, and responsive defects.
-```
-
-### Install into a target project
-
-To run the Playwright tests from inside the project you are QA-testing:
-
-```bash
-bash /path/to/website-ui-deep-qa-skill/scripts/install-into-project.sh /path/to/your-project
-```
-
-The script copies `tests/deep-ui/`, `playwright.config.ts`, and `tsconfig.json` into the target project and patches `package.json` with required devDependencies and scripts. Existing config files are left untouched.
-
-After install:
-
-```bash
-cd /path/to/your-project
-npm install
-npx playwright install
-# Edit tests/deep-ui/helpers/routes.ts → set seedRoutes[] for your app
-BASE_URL=http://localhost:<port> npm test
-```
-
-## Quick start — bundled Playwright automation
-
-```bash
-# Install dependencies and browsers (first time only)
-npm install
-npx playwright install
-
-# Run the full suite against a local app
+# Run the bundled Playwright suite
+npm install && npx playwright install
 BASE_URL=http://localhost:3000 npm test
+
+# Scope to one browser/viewport
+npm run test:chromium   # desktop 1440×900
+npm run test:mobile     # mobile 390×844
+npm run test:headed     # visible browser window
+npm run report          # open HTML report
 ```
 
-## Commands
+Artifacts land in `qa-artifacts/`: screenshots, network records, storage snapshots, a11y findings, console errors, and a `final-report.md`.
 
-| Command | Purpose |
-|:--------|:--------|
-| `npm test` | Full suite — all viewports and browsers |
-| `npm run test:chromium` | Chromium desktop 1440×900 only |
-| `npm run test:mobile` | Chromium mobile 390×844 only |
-| `npm run test:headed` | Headed mode (visible browser window) |
-| `npm run test:ci` | GitHub Actions reporter |
-| `npm run report` | Open HTML report from last run |
-| `npm run typecheck` | Type-check helpers without running tests |
+### SQL / DB audit
 
-`BASE_URL` defaults to `http://localhost:3000` when not set.
+```text
+/sys-admin:sql-deep-qa Audit the database layer in ./src
+```
+
+Works from source code alone or against a live DB (read-only). Covers: SQL injection in all ORM patterns, schema integrity, missing/unnecessary indexes, N+1 queries, migration safety, connection pooling, sensitive column exposure, tenant isolation, credential hygiene, and transaction safety.
+
+### Smart Todo
+
+```text
+/sys-admin:smart-todo
+```
+
+Automatically invoked before any multi-step task. Creates a `TodoWrite` list with priority tags (`[P1]`/`[P2]`/`[P3]`/`[BLOCKER]`), updates status as work progresses, and delivers a completion summary.
+
+### Router
+
+```text
+/sys-admin:sys-admin Audit our entire app — UI, database, and security
+```
+
+Use when the scope spans multiple domains. The router reads the request and dispatches to the right subskills.
+
+---
 
 ## Configuration
 
-### Seed routes
+### Seed routes (website-ui-deep-qa)
 
 Edit `tests/deep-ui/helpers/routes.ts` to set the initial routes the spec visits:
 
@@ -116,11 +115,111 @@ export const seedRoutes: string[] = [
 ];
 ```
 
-Additional routes are discovered automatically at runtime via visible `<a href>` links.
+Additional routes are discovered automatically via visible `<a href>` links at runtime.
 
-### Viewport and browser matrix
+### BASE_URL
 
-Defined in `playwright.config.ts`:
+`BASE_URL` defaults to `http://localhost:3000` when not set. Override per run:
+
+```bash
+BASE_URL=http://localhost:8080 npm test
+```
+
+### Visual regression baselines
+
+Update baselines only when changes are intentional:
+
+```bash
+BASE_URL=http://localhost:3000 npx playwright test --update-snapshots
+```
+
+---
+
+## Testing
+
+Type-check helpers without launching a browser:
+
+```bash
+npm run typecheck
+```
+
+Run the full Playwright suite (requires a running target app):
+
+```bash
+npm install
+npx playwright install
+BASE_URL=http://localhost:3000 npm test
+```
+
+When editing only `SKILL.md` or `skills/` files: verify manually — check frontmatter validity, internal resource paths, and that helper references in SKILL.md still match `tests/deep-ui/helpers/` filenames.
+
+---
+
+## Adding a new skill
+
+Any skill is one file. To add your own:
+
+**1. Create the skill directory and `SKILL.md`:**
+
+```bash
+mkdir -p skills/my-skill
+cat > skills/my-skill/SKILL.md << 'EOF'
+---
+name: my-skill
+description: Use when [triggering conditions for this skill]
+---
+
+# My Skill
+
+[Skill instructions here]
+EOF
+```
+
+**2. Add a sync line to `install.sh`:**
+
+```bash
+# my-skill
+mkdir -p "$PLUGIN_CACHE/skills/my-skill"
+cp "$REPO_DIR/skills/my-skill/SKILL.md" \
+   "$PLUGIN_CACHE/skills/my-skill/SKILL.md"
+```
+
+**3. Add a row to `skills/sys-admin/SKILL.md` routing table:**
+
+```markdown
+| My domain | `my-skill` | ✅ Active |
+```
+
+**4. Re-run the installer:**
+
+```bash
+bash install.sh
+```
+
+Restart Claude Code. Your skill appears as `/sys-admin:my-skill`.
+
+---
+
+## Project structure
+
+```text
+install.sh                    installer — runs once, re-run after any change
+SKILL.md                      website-ui-deep-qa skill (UI QA, 46 helpers)
+AGENTS.md                     Codex/OpenAI-compatible guidance
+CLAUDE.md                     Claude Code project guidance
+playwright.config.ts          viewport matrix and artifact paths
+skills/
+  sys-admin/SKILL.md          router skill
+  sql-deep-qa/SKILL.md        SQL audit skill
+  smart-todo/SKILL.md         task tracking skill
+tests/deep-ui/
+  ui-deep-qa.spec.ts          main Playwright spec (website-ui-deep-qa)
+  helpers/                    46 helper modules (routes, forms, a11y, network, …)
+resources/                    checklists and templates
+agents/openai.yaml            UI metadata for compatible agents
+```
+
+### Viewport matrix (website-ui-deep-qa)
 
 | Project | Viewport |
 |:--------|:---------|
@@ -132,117 +231,51 @@ Defined in `playwright.config.ts`:
 | `firefox-smoke` | 1440×900 |
 | `webkit-smoke` | 1440×900 |
 
-Artifacts go to `qa-artifacts/`. Traces and videos are retained on failure.
+---
 
-### Visual regression baselines
+## Commands
 
-Update baselines only when changes are intentional:
+| Command | Purpose |
+|:--------|:--------|
+| `npm test` | Full Playwright suite — all viewports and browsers |
+| `npm run test:chromium` | Chromium desktop 1440×900 only |
+| `npm run test:mobile` | Chromium mobile 390×844 only |
+| `npm run test:headed` | Headed mode — visible browser window |
+| `npm run test:ci` | GitHub Actions reporter format |
+| `npm run report` | Open HTML report from last run |
+| `npm run typecheck` | Type-check helpers without running tests |
 
-```bash
-BASE_URL=http://localhost:3000 npx playwright test --update-snapshots
-```
-
-## Output artifacts
-
-All artifacts are written to `qa-artifacts/`:
-
-```text
-qa-artifacts/
-  screenshots/          per-route, per-viewport PNG files
-  network/              network records and leak findings (JSON)
-  storage/              before/after storage state (JSON)
-  console/              console errors and page errors (JSON)
-  accessibility/        a11y issues and keyboard focus order (JSON)
-  performance/          Web Vitals and DOM node counts (JSON)
-  layout/               layout issues per scroll position (JSON)
-  forms/                form audit findings (JSON)
-  overlays/             overlay audit findings (JSON)
-  seo/                  SEO issues (JSON)
-  security/             DOM, header, mixed-content, and URL-token findings (JSON)
-  reports/
-    final-report.md     per-route Markdown summary
-  playwright-report/    HTML report (open with npm run report)
-  results.json          machine-readable test results
-```
-
-## Project structure
-
-```text
-SKILL.md                  skill instructions for Claude Code (primary file)
-AGENTS.md                 Codex/OpenAI-style guidance
-CLAUDE.md                 Claude Code repository guidance
-playwright.config.ts      viewport matrix and artifact paths
-agents/
-  openai.yaml             UI metadata for compatible agents
-resources/
-  accessibility-checklist.md
-  coverage-matrix.md
-  defect-template.md
-  mcp-runbook.md
-  report-template.md
-  responsive-checklist.md
-  security-storage-network-checklist.md
-tests/deep-ui/
-  ui-deep-qa.spec.ts      main Playwright spec
-  helpers/
-    routes.ts             seedRoutes, discoverLinks, normalizeRoute
-    screenshots.ts        screenshotStep, fullPageScreenshot, visualRegression
-    network.ts            attachNetworkMonitor, scanResponsesForLeaks, assertNetworkHealthy
-    storage.ts            collectStorageState, writeStorageReport
-    layout.ts             collectLayoutIssues
-    interactions.ts       testVisibleButtons, testVisibleLinks
-    accessibility.ts      collectAccessibilityIssues, collectKeyboardFocusOrder
-    console.ts            attachConsoleMonitor, severeConsoleFindings
-    performance.ts        collectPerformanceSnapshot, poorWebVitals
-    forms.ts              auditForms, triggerAndCaptureValidation
-    overlays.ts           discoverAndAuditOverlays
-    seo.ts                auditSeo
-    security.ts           auditDomSecurity, auditSecurityHeaders, auditMixedContent
-    report.ts             appendMarkdownReport, writeJsonArtifact
-```
-
-## Testing
-
-Run the full Playwright suite to verify the skill's bundled automation:
-
-```bash
-npm install
-npx playwright install
-BASE_URL=http://localhost:3000 npm test
-```
-
-Type-check helpers without launching a browser:
-
-```bash
-npm run typecheck
-```
-
-When editing only `SKILL.md` or `resources/` files, verify manually: frontmatter validity, internal resource paths, and helper references.
+---
 
 ## Contributing
 
-1. Fork the repository and create a feature branch.
-2. Edit `SKILL.md` to update skill instructions; edit `tests/deep-ui/` to update automation.
-3. Keep `SKILL.md` and `tests/deep-ui/ui-deep-qa.spec.ts` in sync — the spec implements what the skill describes.
-4. Run `npm run typecheck` before submitting a pull request.
-5. Do not remove safety boundaries or the inspect-first rule from `SKILL.md`.
+1. Fork the repository.
+2. Create a branch: `git checkout -b feat/my-skill`.
+3. Add or edit skill files in `skills/`.
+4. If editing `tests/deep-ui/`, run `npm run typecheck` before submitting.
+5. Keep `SKILL.md` (instructions) and `tests/deep-ui/ui-deep-qa.spec.ts` (automation) in sync for the UI skill.
+6. Open a pull request — all skill additions and improvements are welcome.
+
+No CLA, no bureaucracy. If your skill is useful, it gets merged.
+
+---
 
 ## Safety boundaries
 
-The skill and spec never perform the following without explicit user confirmation:
+The UI QA skill and Playwright spec never perform the following without explicit confirmation:
 
-- Payments or subscription changes
+- Payments, subscriptions, or billing changes
 - Bookings or reservations
 - Sending email or public messages
 - Destructive account changes or data deletion
-- Production deployment or live database migration
+- Production deployments or live database migrations
 
 Login, 2FA, and payment flows require a human to take over the browser. Credentials are never requested in chat.
 
+The SQL audit skill runs **read-only** by default. `DROP`, `DELETE`, `TRUNCATE`, and `ALTER TABLE` require explicit confirmation with a stated rollback plan.
+
+---
+
 ## License
 
-No `LICENSE` file is present in this repository.
-
-## Maintainer TODOs
-
-- **License**: Add a `LICENSE` file to clarify how this skill may be used and distributed.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
