@@ -9,6 +9,8 @@ import { collectStorageState, writeStorageReport } from './helpers/storage';
 import { collectLayoutIssues } from './helpers/layout';
 import { testVisibleButtons, testVisibleLinks } from './helpers/interactions';
 import { testZoomScroll } from './helpers/zoom-scroll';
+import { testThemeComparison } from './helpers/theme-comparison';
+import { writeFixPlan } from './helpers/fix-plan';
 import { collectAccessibilityIssues, collectKeyboardFocusOrder } from './helpers/accessibility';
 import { attachConsoleMonitor, severeConsoleFindings } from './helpers/console';
 import { collectPerformanceSnapshot, poorWebVitals } from './helpers/performance';
@@ -124,6 +126,27 @@ test.describe('Deep UI QA', () => {
           `style.zoom="${zoomAfterTest}" — subsequent tests will run zoomed.`
       ).toMatch(/^(|1)$/);
 
+      // ── Theme comparison ─────────────────────────────────────────────────
+      // Compares light vs dark rendering using prefers-color-scheme emulation.
+      // Primary check: elements that become near-invisible (contrast <1.5) in
+      // one theme but are readable (≥4.5) in the other — HIGH severity.
+      // Secondary: theme toggle smoke test and layout overflow in dark mode.
+      // Resets to light mode after; body-bg leak guard runs before interactions
+      // and visualRegression to prevent baseline drift.
+      const themeReport = await testThemeComparison(page, route);
+      const themeHighFindings = themeReport.issues.filter(
+        (f) => f.severity === 'critical' || f.severity === 'high'
+      );
+      expect(
+        themeHighFindings,
+        `Theme-broken elements (invisible in one theme) on ${route}:\n${JSON.stringify(themeHighFindings, null, 2)}`
+      ).toEqual([]);
+
+      // Verify emulateMedia reset to light before continuing
+      // (page.emulateMedia has no getter — verify via body bg change guard in helper;
+      // re-assert emulation is light so visualRegression baselines are stable)
+      await page.emulateMedia({ colorScheme: 'light' });
+
       // ── Interaction tests ────────────────────────────────────────────────
       await testVisibleLinks(page, route);
       await testVisibleButtons(page, route);
@@ -182,6 +205,8 @@ test.describe('Deep UI QA', () => {
         `\n## Route: ${route}\n\n` +
         `- Zoom/scroll findings: ${zoomScrollReport.findings.length} (browser zoom supported: ${zoomScrollReport.browserZoomSupported})\n` +
         `- Zoom/scroll high+critical: ${zoomScrollHighFindings.length}\n` +
+        `- Theme: dark-mode responsive=${themeReport.siteRespondsToDarkMode}, toggle=${themeReport.toggleFound}\n` +
+        `- Theme findings: ${themeReport.issues.length} | High+critical: ${themeHighFindings.length}\n` +
         `- Accessibility issues: ${accessibilityIssues.length}\n` +
         `- Focus visibility issues: ${keyboardResult.focusVisibilityIssues.length}\n` +
         `- Form findings: ${formFindings.length}\n` +
@@ -217,5 +242,13 @@ test.describe('Deep UI QA', () => {
 
       await visualRegression(page, route);
     }
+
+    // ── Fix plan ────────────────────────────────────────────────────────────
+    // Runs once after all routes are tested. Reads every JSON artifact written
+    // above, aggregates + deduplicates findings across all categories, maps
+    // each issue type to a specific fix recommendation + effort estimate, and
+    // writes a prioritised fix plan to qa-artifacts/reports/fix-plan.md.
+    // Missing artifact files (routes that bailed mid-test) are silently skipped.
+    writeFixPlan(Array.from(discoveredRoutes));
   });
 });
