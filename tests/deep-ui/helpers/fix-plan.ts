@@ -503,6 +503,25 @@ const FIX_RECOMMENDATIONS: Record<string, FixMeta> = {
   'hint-text-above-input': { fix: 'Move hint/help text below its associated input field — above placement may be confused with the label', effort: 'XS' },
   'hint-text-misaligned': { fix: 'Align hint text left edge with its associated input field', effort: 'XS' },
   'required-field-no-indicator': { fix: 'Add * or "required" text to label of required fields and include a legend explaining the indicator', effort: 'XS', wcag: 'WCAG 3.3.2' },
+  // Typography
+  'body-font-too-small': { fix: 'Set font-size on body to at least 14px (16px recommended); never use px < 12', effort: 'XS', wcag: 'WCAG 1.4.4' },
+  'body-font-small': { fix: 'Increase body font-size to 14px or above for comfortable reading', effort: 'XS' },
+  'line-height-too-tight': { fix: 'Set line-height: 1.5 on body text (min 1.2); tight line-height hurts readability (WCAG 1.4.8)', effort: 'XS', wcag: 'WCAG 1.4.8' },
+  'line-height-low': { fix: 'Increase line-height to at least 1.4 on body text', effort: 'XS' },
+  'line-height-too-loose': { fix: 'Reduce line-height to ≤ 2 for body text; extremely loose spacing fragments reading', effort: 'XS' },
+  'heading-hierarchy-wrong': { fix: 'Fix heading font sizes — each level must be smaller than the one above it', effort: 'S' },
+  'heading-same-size-as-body': { fix: 'Increase heading font size so it visually distinguishes from body text', effort: 'XS' },
+  'line-length-too-wide': { fix: 'Add max-width: 65ch (or ~700px) to content containers — lines > 90 chars hurt readability', effort: 'S' },
+  'line-length-wide': { fix: 'Consider max-width: 70ch on content area; wide lines slow reading speed', effort: 'S' },
+  'line-length-too-narrow': { fix: 'Widen content container to at least 300px for readable line length', effort: 'XS' },
+  'too-many-font-families': { fix: 'Limit to 2 font families (body + heading); each additional family adds HTTP request overhead and visual inconsistency', effort: 'M' },
+  'web-fonts-no-preload': { fix: 'Add <link rel="preload" as="font" href="..." crossorigin> for primary web fonts to reduce FOUT', effort: 'XS' },
+  'font-display-missing-swap': { fix: 'Add font-display: swap to @font-face rules to prevent invisible text during font load', effort: 'XS' },
+  'text-too-small': { fix: 'Set min font-size 12px on all visible text elements; prefer 14px+ for content', effort: 'S', wcag: 'WCAG 1.4.4' },
+  'text-very-small': { fix: 'Increase font size of element to at least 12px', effort: 'XS' },
+  'text-overflow-clipped': { fix: 'Replace overflow: hidden with overflow: hidden + text-overflow: ellipsis + title attribute, or allow text to wrap', effort: 'S' },
+  'negative-letter-spacing': { fix: 'Remove negative letter-spacing from body/paragraph text — it hurts readability', effort: 'XS' },
+  'heading-letter-spacing-extreme': { fix: 'Reduce heading letter-spacing to ≤ 0.2em for readability (decorative wide-spaced headings are hard to read)', effort: 'XS' },
   // Performance
   'poor-lcp': {
     fix: 'Preload largest contentful image; defer non-critical scripts; check server response time',
@@ -1102,6 +1121,20 @@ function ingestSearch(route: string, routeName: string): NormalizedFinding[] {
   }));
 }
 
+function ingestTypography(route: string, routeName: string): NormalizedFinding[] {
+  const filePath = path.join('qa-artifacts', 'typography', `${routeName}-typography.json`);
+  const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
+  if (!data?.findings) return [];
+  return data.findings.filter(f => f.severity !== 'info').map(item => ({
+    route, source: 'typography',
+    severity: (item.severity as Severity) || 'low',
+    type: item.type || 'typography-issue',
+    message: item.message || JSON.stringify(item),
+    selector: item.selector,
+    evidencePath: filePath,
+  }));
+}
+
 function ingestSidebar(route: string, routeName: string): NormalizedFinding[] {
   const filePath = path.join('qa-artifacts', 'sidebar', `${routeName}-sidebar.json`);
   const data = safeReadJson<{ findings: Array<{ severity?: string; type?: string; message?: string; selector?: string }> }>(filePath);
@@ -1297,6 +1330,7 @@ export function writeFixPlan(routes: string[]): void {
       ...ingestSidebar(route, routeName),
       ...ingestDialogScroll(route, routeName),
       ...ingestFormAlignment(route, routeName),
+      ...ingestTypography(route, routeName),
     );
   }
 

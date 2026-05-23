@@ -47,6 +47,7 @@ import { auditUserLifecycle } from './helpers/user-lifecycle';
 import { auditSidebar } from './helpers/sidebar';
 import { auditDialogScroll } from './helpers/dialog-scroll';
 import { auditFormAlignment } from './helpers/form-alignment';
+import { auditTypography } from './helpers/typography';
 
 /**
  * Deep UI QA — enhanced entry point.
@@ -392,6 +393,16 @@ test.describe('Deep UI QA', () => {
       const popupQualityReport = await auditPopupQuality(page, route);
       const popupQualityHigh = popupQualityReport.findings.filter((f) => f.severity === 'high');
 
+      // ── Typography audit ─────────────────────────────────────────────────
+      // 10 checks: body font size, line-height ratio, heading hierarchy,
+      // line length (readability), font family count, web font preload,
+      // font-display:swap, small text (< 10px), text overflow clipping,
+      // letter spacing extremes.
+      // HIGH = body font < 12px, line-height ratio < 1.2, content > 900px wide,
+      //        any element < 10px font size.
+      const typographyReport = await auditTypography(page, route);
+      const typographyHigh = typographyReport.findings.filter((f) => f.severity === 'high');
+
       // ── Sidebar audit ────────────────────────────────────────────────────
       // Detects sidebar, checks: z-index, nav link labels (icon-only a11y),
       // collapse toggle keyboard access, mobile drawer open/close/escape,
@@ -472,6 +483,7 @@ test.describe('Deep UI QA', () => {
         `- Sidebar: detected=${sidebarReport.sidebarDetected}, pos=${sidebarReport.sidebarPosition}, collapsible=${sidebarReport.isCollapsible}, mobileDrawer=${sidebarReport.hasMobileDrawer} | Critical: ${sidebarCritical.length} | High: ${sidebarHigh.length} | Findings: ${sidebarReport.findings.length}\n` +
         `- Dialog scroll: dialogs=${dialogScrollReport.dialogsFound} | High: ${dialogScrollHigh.length} | Findings: ${dialogScrollReport.findings.length}\n` +
         `- Form alignment: forms=${formAlignReport.formsChecked}, inputs=${formAlignReport.inputsChecked} | High: ${formAlignHigh.length} | Findings: ${formAlignReport.findings.length}\n` +
+        `- Typography: bodyFont=${typographyReport.bodyFontSize}px, lineHeight=${typographyReport.bodyLineHeight.toFixed(2)}, families=${typographyReport.fontFamiliesFound.length}, webFonts=${typographyReport.webFontsDetected} | High: ${typographyHigh.length} | Findings: ${typographyReport.findings.length}\n` +
         `- Console errors/page errors: ${consoleFindings.severeMessages.length + consoleFindings.pageErrors.length}\n` +
         `- React key warnings: ${consoleFindings.reactKeyWarnings.length} | React warnings: ${consoleFindings.reactWarnings.length}\n` +
         `- Hydration errors: ${consoleFindings.hydrationErrors.length}\n` +
@@ -592,6 +604,11 @@ test.describe('Deep UI QA', () => {
       expect(
         formAlignHigh,
         `Form alignment issues on ${route}:\n${JSON.stringify(formAlignHigh, null, 2)}`
+      ).toEqual([]);
+
+      expect(
+        typographyHigh,
+        `Typography issues on ${route}:\n${JSON.stringify(typographyHigh, null, 2)}`
       ).toEqual([]);
 
       await visualRegression(page, route);
