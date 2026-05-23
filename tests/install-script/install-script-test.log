@@ -1,0 +1,133 @@
+# Install Script Test Log
+# scripts/install-into-project.sh
+# Last run: 2026-05-23
+
+## Scenario 1 — Existing project with package.json
+
+Command:
+  bash scripts/install-into-project.sh /tmp/sample-project
+
+Setup:
+  /tmp/sample-project/package.json = { name: "sample-app", scripts: { start: "node index.js" } }
+
+Output:
+  Installing website-ui-deep-qa into: /tmp/sample-project
+  ✓ Copied tests/deep-ui/ → /tmp/sample-project/tests/deep-ui
+  ✓ Copied playwright.config.ts
+  ✓ Copied tsconfig.json
+  ✓ Added @playwright/test to devDependencies
+  ✓ Added typescript to devDependencies
+  ✓ Added 7 script(s) to package.json
+  Done.
+
+Verified:
+  - All 15 test helper files copied to tests/deep-ui/
+  - playwright.config.ts present
+  - tsconfig.json present
+  - package.json preserved original name, version, and scripts
+  - package.json gained: test, test:chromium, test:mobile, test:headed, test:ci, report, typecheck
+  - devDependencies gained: @playwright/test, typescript
+
+Result: PASS
+
+---
+
+## Scenario 2 — Re-run on same project (idempotency)
+
+Command:
+  bash scripts/install-into-project.sh /tmp/sample-project  (second run)
+
+Output:
+  Installing website-ui-deep-qa into: /tmp/sample-project
+  ✓ Copied tests/deep-ui/ → /tmp/sample-project/tests/deep-ui
+  ⚠ playwright.config.ts already exists — skipped (review manually)
+  ⚠ tsconfig.json already exists — skipped (review manually)
+  ⚠ @playwright/test already in devDependencies — not changed
+  Done.
+
+Verified:
+  - Config files not overwritten
+  - Existing devDependency not duplicated
+  - Test files refreshed (cp -r is safe to re-run)
+
+Result: PASS
+
+---
+
+## Scenario 3 — Bare project (no package.json)
+
+Command:
+  bash scripts/install-into-project.sh /tmp/bare-project
+
+Setup:
+  /tmp/bare-project/ (empty directory)
+
+Output:
+  Installing website-ui-deep-qa into: /tmp/bare-project
+  ✓ Copied tests/deep-ui/ → /tmp/bare-project/tests/deep-ui
+  ✓ Copied playwright.config.ts
+  ✓ Copied tsconfig.json
+  ✓ Created package.json with required scripts and devDependencies
+  Done.
+
+Verified:
+  - Full package.json created with all 7 scripts and both devDependencies
+  - All test files present
+
+Result: PASS
+
+---
+
+## Scenario 4 — Missing target directory
+
+Command:
+  bash scripts/install-into-project.sh /tmp/does-not-exist
+
+Output:
+  Error: target directory does not exist: /tmp/does-not-exist
+
+Exit code: 1
+
+Result: PASS
+
+---
+
+## Scenario 5 — No argument
+
+Command:
+  bash scripts/install-into-project.sh
+
+Output:
+  Usage: bash scripts/install-into-project.sh /path/to/target-project
+
+Exit code: 1
+
+Result: PASS
+
+---
+
+## Summary
+
+  Scenarios: 5
+  Passed:    5
+  Failed:    0
+
+Files copied (per install):
+  tests/deep-ui/ui-deep-qa.spec.ts
+  tests/deep-ui/helpers/accessibility.ts
+  tests/deep-ui/helpers/console.ts
+  tests/deep-ui/helpers/forms.ts
+  tests/deep-ui/helpers/interactions.ts
+  tests/deep-ui/helpers/layout.ts
+  tests/deep-ui/helpers/network.ts
+  tests/deep-ui/helpers/overlays.ts
+  tests/deep-ui/helpers/performance.ts
+  tests/deep-ui/helpers/report.ts
+  tests/deep-ui/helpers/routes.ts
+  tests/deep-ui/helpers/screenshots.ts
+  tests/deep-ui/helpers/security.ts
+  tests/deep-ui/helpers/seo.ts
+  tests/deep-ui/helpers/storage.ts
+  playwright.config.ts
+  tsconfig.json
+  package.json (created or patched)
