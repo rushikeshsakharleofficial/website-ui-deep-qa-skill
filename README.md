@@ -2,7 +2,7 @@
 
 # sys-admin
 
-**A Claude Code plugin with nine QA and productivity skills — UI, visual design, SEO, SQL, PostgreSQL, API, and more.**  
+**A Claude Code plugin with ten skills — UI/UX design builder, visual design QA, SEO, SQL, PostgreSQL, API testing, and more.**  
 Install once. Invoke from any project. Add your own skills freely.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -18,6 +18,7 @@ Install once. Invoke from any project. Add your own skills freely.
 - [Installation](#installation)
 - [Usage](#usage)
   - [Router](#router--smart-dispatch)
+  - [UI/UX Designer](#uiux-designer--build-animate-ship)
   - [UI / Web QA](#ui--web-qa)
   - [SQL / DB audit](#sql--db-audit)
   - [PostgreSQL deep audit](#postgresql-deep-audit)
@@ -40,7 +41,7 @@ Install once. Invoke from any project. Add your own skills freely.
 
 `sys-admin` is an open-source Claude Code plugin that bundles a growing set of QA and productivity skills. Each skill is a focused instruction file Claude loads on demand — no runtime, no server, no build step.
 
-Nine skills ship out of the box: a **smart router**, **functional UI QA** with Playwright (46 helpers), **visual design QA** with industry benchmarks, **SEO auditing**, **SQL auditing**, **PostgreSQL-specific auditing**, **REST/GraphQL/gRPC API testing**, **task tracking**, and a **Claude Code marketplace guide**.
+Ten skills ship out of the box: a **smart router**, **UI/UX design builder** (animations, 3D, design systems, live scraping of 21st.dev and design sites), **functional UI QA** with Playwright (46 helpers), **visual design QA** with industry benchmarks, **SEO auditing**, **SQL auditing**, **PostgreSQL-specific auditing**, **REST/GraphQL/gRPC API testing**, **task tracking**, and a **Claude Code marketplace guide**.
 
 **100% open. Fork it, modify it, add your own skills. MIT licensed.**
 
@@ -48,9 +49,10 @@ Nine skills ship out of the box: a **smart router**, **functional UI QA** with P
 
 ## Skills
 
-| Skill | Invocation | Checks |
-|:------|:-----------|:-------|
+| Skill | Invocation | What it does |
+|:------|:-----------|:-------------|
 | Router | `/sys-admin:sys-admin` | Reads the request, extracts domain keywords, dispatches subskills in priority order |
+| **UI/UX Designer** | `/sys-admin:ui-ux-designer` | **Build** interfaces: design tokens, 7 style presets (Glass, Neobrutal, Clay, Neu, Bento, Premium, Minimal), GSAP + ScrollTrigger, Framer Motion, Three.js + R3F 3D, Lenis smooth scroll, micro-interactions; scrapes 21st.dev / ui.aceternity.com / magicui.design live for best patterns |
 | UI / Web QA | `/sys-admin:website-ui-deep-qa` | 46 check categories: layout, forms, a11y, network, security, responsive, SEO, CSRF, auth, flow bypass |
 | SQL / DB audit | `/sys-admin:sql-deep-qa` | 17 categories: injection (all types + sqlmap), schema, indexes, performance, migrations, connections, ORM, compliance |
 | PostgreSQL | `/sys-admin:postgres-deep-qa` | 17 categories: XID wraparound, autovacuum, WAL/replication, PgBouncer, RLS bypass (11 vectors), PG17, postgresql.conf |
@@ -104,6 +106,32 @@ The router scans the request for domain keywords and dispatches subskills in pri
 /sys-admin:sys-admin Full security audit — AI built this with Cursor
 # → smart-todo + sql-deep-qa + api-deep-qa + website-ui-deep-qa
 ```
+
+---
+
+### UI/UX Designer — Build, Animate, Ship
+
+```text
+/sys-admin:ui-ux-designer Build a glassmorphism landing page with GSAP scroll animations
+/sys-admin:ui-ux-designer Add a Three.js particle hero to my Next.js app
+/sys-admin:ui-ux-designer Make it look like Linear — dark, minimal, lavender accent
+/sys-admin:ui-ux-designer Add smooth scroll with pinned sections and horizontal scroll
+/sys-admin:ui-ux-designer Create a design token system with dark mode
+```
+
+**What it does:** Scrapes live design resources (21st.dev, ui.aceternity.com, magicui.design, Codrops), fetches company DESIGN.md files (Stripe, Linear, Vercel, Raycast, 70+ more), then generates production-ready code. Output is always code blocks — never writes to files directly.
+
+| Capability | Libraries |
+|:-----------|:----------|
+| Scroll animations | GSAP + ScrollTrigger, Lenis smooth scroll |
+| React animations | Framer Motion (variants, AnimatePresence, useScroll) |
+| 3D scenes | Three.js, React Three Fiber + drei |
+| CSS 3D | Tilt card, card flip, depth parallax |
+| Micro-interactions | Magnetic buttons, cursor follower, ripple, text reveal |
+| Style presets | Glass, Neobrutal, Clay, Neu, Bento, Premium, Minimal |
+| Design system | CSS tokens (colors, type, spacing, elevation, radius, motion) |
+
+After building, run `/sys-admin:ui-visual-qa` to audit visual quality.
 
 ---
 
@@ -317,6 +345,7 @@ skills/
   api-deep-qa/SKILL.md        API testing — 18 categories
   seo-deep-qa/SKILL.md        SEO audit — 21 categories
   ui-visual-qa/SKILL.md       visual design QA — regression + 14 categories + 73-design benchmark
+  ui-ux-designer/SKILL.md     UI/UX design builder — tokens, 3D, GSAP, Framer Motion, live scraping
   smart-todo/SKILL.md         task tracking
   marketplace/SKILL.md        Claude Code plugin lifecycle guide
 tests/deep-ui/
@@ -376,6 +405,7 @@ No CLA, no bureaucracy. All skill additions welcome.
 | `api-deep-qa` | Read endpoints freely | Mutations to production data · sqlmap · fuzzing (require authorization context) |
 | `seo-deep-qa` | GET/HEAD HTTP requests | Nothing — never submits forms, never authenticates |
 | `ui-visual-qa` | DOM inspection only | Baseline overwrites (require `UPDATE_SNAPSHOTS=true` flag) |
+| `ui-ux-designer` | Code blocks only — no file writes | Nothing — outputs code, user decides what to paste |
 
 Login, 2FA, and payment flows in the UI skill require a human to take over the browser. Credentials are never requested in chat.
 

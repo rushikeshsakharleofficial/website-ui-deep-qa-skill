@@ -70,13 +70,19 @@ mkdir -p "$PLUGIN_CACHE/skills/seo-deep-qa"
 cp "$REPO_DIR/skills/seo-deep-qa/SKILL.md" \
    "$PLUGIN_CACHE/skills/seo-deep-qa/SKILL.md"
 
+# ui-ux-designer subskill
+mkdir -p "$PLUGIN_CACHE/skills/ui-ux-designer"
+cp "$REPO_DIR/skills/ui-ux-designer/SKILL.md" \
+   "$PLUGIN_CACHE/skills/ui-ux-designer/SKILL.md"
+
 # Plugin CLAUDE.md
 cat > "$PLUGIN_CACHE/CLAUDE.md" << 'CLAUDE_EOF'
 # Sys Admin
 
-Nine QA and productivity skills — invoke via the router or directly.
+Ten QA, design, and productivity skills — invoke via the router or directly.
 
 - Multi-domain audit (UI + SQL + API + SEO + visual): use `sys-admin:sys-admin`
+- Build UI/UX, animations, 3D, scroll effects, design systems: use `sys-admin:ui-ux-designer`
 - Functional UI / web app testing: use `sys-admin:website-ui-deep-qa`
 - Visual design QA (regression + industry benchmark): use `sys-admin:ui-visual-qa`
 - SEO page optimization audit: use `sys-admin:seo-deep-qa`
@@ -105,7 +111,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sys-admin",
   "displayName": "Sys Admin",
-  "description": "Nine QA and productivity skills: functional UI QA (Playwright, 46 helpers), visual design QA (regression + industry benchmark), SEO audit (21 categories), SQL audit (17 categories), PostgreSQL deep audit, API testing (18 categories), smart todo, and Claude Code marketplace guide.",
+  "description": "Ten skills: UI/UX design builder (3D, GSAP, Framer Motion, design systems), functional UI QA (Playwright, 46 helpers), visual design QA (regression + industry benchmark), SEO audit (21 categories), SQL audit (17 categories), PostgreSQL deep audit, API testing (18 categories), smart todo, and marketplace guide.",
   "author": {
     "name": "Rushikesh Sakharle",
     "url": "https://github.com/rushikeshsakharleofficial"
@@ -122,7 +128,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/marketplace.json" << 'MARKET_EOF'
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sys-admin",
-  "description": "Nine QA and productivity skills for websites and web apps: functional UI QA (Playwright, 46 helpers), visual design QA (pixel regression + 73-design industry benchmark), SEO audit (21 categories), SQL audit, PostgreSQL deep audit, REST/GraphQL/gRPC API testing, smart todo, and marketplace guide.",
+  "description": "Ten skills for websites and web apps: UI/UX design builder with 3D (Three.js/R3F), scroll animations (GSAP/Lenis), Framer Motion, design systems; functional UI QA (Playwright, 46 helpers); visual design QA (pixel regression + 73-design benchmark); SEO audit (21 categories); SQL audit; PostgreSQL deep audit; API testing; smart todo; marketplace guide.",
   "owner": {
     "name": "Rushikesh Sakharle",
     "url": "https://github.com/rushikeshsakharleofficial"
@@ -130,7 +136,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/marketplace.json" << 'MARKET_EOF'
   "plugins": [
     {
       "name": "sys-admin",
-      "description": "Nine QA and productivity skills. Use sys-admin:sys-admin for smart multi-domain routing, sys-admin:website-ui-deep-qa for functional UI testing, sys-admin:ui-visual-qa for visual design QA, sys-admin:seo-deep-qa for SEO audits.",
+      "description": "Ten skills. Use sys-admin:ui-ux-designer to build UI/UX with 3D+animations, sys-admin:sys-admin for multi-domain routing, sys-admin:website-ui-deep-qa for functional testing, sys-admin:ui-visual-qa for visual QA, sys-admin:seo-deep-qa for SEO.",
       "source": "./",
       "category": "testing",
       "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin"
@@ -197,13 +203,14 @@ echo "✓ Done. Plugin installed and enabled as: sys-admin@sys-admin"
 echo ""
 echo "   Invoke via:"
 echo "   /sys-admin:sys-admin           — routing skill (multi-domain dispatch)"
+echo "   /sys-admin:ui-ux-designer      — UI/UX design builder (3D, GSAP, Framer Motion, design systems)"
 echo "   /sys-admin:website-ui-deep-qa  — UI QA subskill (46 helpers)"
+echo "   /sys-admin:ui-visual-qa        — visual QA (regression + design quality + industry benchmark)"
+echo "   /sys-admin:seo-deep-qa         — SEO audit (21 check categories)"
 echo "   /sys-admin:sql-deep-qa         — SQL audit (17 categories)"
 echo "   /sys-admin:postgres-deep-qa    — PostgreSQL deep audit (17 categories)"
 echo "   /sys-admin:api-deep-qa         — API testing (18 categories)"
 echo "   /sys-admin:smart-todo          — task tracking (auto for 3+ step tasks)"
 echo "   /sys-admin:marketplace         — Claude Code plugin lifecycle"
-echo "   /sys-admin:ui-visual-qa        — visual QA (regression + design quality + industry benchmark)"
-echo "   /sys-admin:seo-deep-qa         — SEO audit (21 check categories)"
 echo ""
 echo "   Restart Claude Code to load the new plugin."
