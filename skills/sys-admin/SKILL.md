@@ -50,7 +50,7 @@ Count distinct domains matched:
 When multiple subskills are needed, always run in this order:
 
 ```
-1. smart-todo          ← ALWAYS FIRST if task has 3+ steps (mandatory)
+1. smart-todo          ← ALWAYS FIRST, every task, no exceptions
 2. sql-deep-qa         ← security/data risk highest; run before UI
 3. postgres-deep-qa    ← PostgreSQL-specific (run alongside sql-deep-qa when PG keywords detected)
 4. api-deep-qa         ← API surface before UI layer
@@ -115,19 +115,19 @@ Do not ask multiple questions. Do not start work until the answer is received.
 
 ---
 
-## Step 6 — smart-todo auto-activation rule
+## Step 6 — smart-todo is always first
 
-**smart-todo activates automatically when any of these are true:**
-- Dispatching 2+ subskills (always 3+ steps)
-- Single subskill but the request implies multiple checks
-- User says "audit", "review", "test everything", "full check"
-- Task will produce a multi-section report
+**smart-todo is the primary skill. It activates for EVERY task — no conditions, no exceptions.**
 
-When smart-todo activates:
-1. Create the master todo list FIRST
-2. Add one `[P1]` item per subskill to dispatch
-3. Add `[P1]` items for each major check category
-4. Add `[P2]` items for report writing, reviewing findings, prioritizing defects
+Before dispatching any subskill, before doing any work:
+1. Invoke `sys-admin:smart-todo`
+2. Create the master todo list
+3. Add one `[P1]` item per subskill to dispatch
+4. Add `[P1]` items for each major check category
+5. Add `[P2]` items for report writing, reviewing findings, prioritizing defects
+6. Then begin dispatching subskills in order
+
+This applies even when dispatching a single subskill. smart-todo is always step 1.
 
 ---
 
@@ -237,7 +237,8 @@ Dispatch order:
 |-------|-------|
 | Pick one subskill when two keywords appear | Run both in dispatch order |
 | Ask multiple clarifying questions | Ask exactly one question with A/B/C/D |
-| Start work before smart-todo on multi-domain | smart-todo ALWAYS first |
+| Start work before smart-todo | smart-todo ALWAYS first — every task, no exceptions |
 | Route "is it secure?" to only website-ui-deep-qa | Security = all three layers |
 | Ignore "AI generated" signal | AI-generated code = assume all-domain issues |
-| Skip smart-todo because "it's just a quick audit" | 3+ steps → smart-todo. No exceptions. |
+| Skip smart-todo because "it's just a quick audit" | Every task → smart-todo first. No exceptions. |
+| Skip smart-todo for a single-subskill dispatch | Still run smart-todo first. Always. |

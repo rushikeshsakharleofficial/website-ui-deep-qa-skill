@@ -1,19 +1,23 @@
 ---
 name: smart-todo
-description: MANDATORY for any task with 3+ steps — activate before starting work, not after. Use throughout to update status, add discovered steps, and surface blockers. Never skip for "simple" or "quick" work if it has 3+ steps.
+description: MANDATORY PRIMARY SKILL — activate before starting ANY task. Always the first skill invoked, no exceptions. Use throughout to update status, add discovered steps, and surface blockers. Never skip — not for "simple", "quick", "one thing", or "just a question". Every task starts here.
 ---
 
 # Smart Todo
 
 ## Core principle
 
-One list per task session. Create it immediately. Update it in real time — never let the list lag behind the actual work.
+**Primary skill. Always first. No exceptions.**
+
+One list per task session. Create it immediately — before any tool call, before any code read, before any response. Update it in real time — never let the list lag behind the actual work.
 
 ## Lifecycle
 
 ```
-Receive task → Decompose → Write list → Work item by item → Update status as you go → Report on completion
+Receive ANY task → Create list immediately → Work item by item → Update status as you go → Report on completion
 ```
+
+Even single-step tasks get a one-item list. It keeps work visible and accountable.
 
 Never finish a step without marking it. Never discover a new step without adding it.
 
@@ -120,12 +124,13 @@ When all `[P1]` and `[P2]` items are `completed`, report:
 
 ## Rules that must not break
 
-1. **Never work without a list** — if 3+ steps exist, list exists.
-2. **Never let completed work stay `pending`** — update immediately or the list becomes noise.
-3. **Never mark `completed` before the work is actually done** — no optimistic completion.
-4. **One `in_progress` at a time** — parallel work confuses status.
-5. **Add discovered items immediately** — don't hold them in memory.
-6. **Blockers are explicit** — don't silently stall; add a `[BLOCKER]` item.
+1. **Always first** — list created before any other action, every task, no exceptions.
+2. **Never work without a list** — every task gets a list, even if it's one item.
+3. **Never let completed work stay `pending`** — update immediately or the list becomes noise.
+4. **Never mark `completed` before the work is actually done** — no optimistic completion.
+5. **One `in_progress` at a time** — parallel work confuses status.
+6. **Add discovered items immediately** — don't hold them in memory.
+7. **Blockers are explicit** — don't silently stall; add a `[BLOCKER]` item.
 
 ---
 

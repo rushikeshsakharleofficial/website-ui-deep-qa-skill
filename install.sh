@@ -91,14 +91,23 @@ Ten QA, design, and productivity skills — invoke via the router or directly.
 - REST / GraphQL / gRPC API testing: use `sys-admin:api-deep-qa`
 - Claude Code plugin lifecycle: use `sys-admin:marketplace`
 
-## MANDATORY RULE — Smart Todo
+## MANDATORY RULE — Smart Todo is always first
 
-**For EVERY task with 3 or more steps, you MUST invoke `sys-admin:smart-todo` before starting work.**
+**For EVERY task — without exception — invoke `sys-admin:smart-todo` before any other action.**
 
-This is not optional. No exceptions for "simple" tasks, "quick" fixes, or "just one thing" — if the work has 3+ steps, `sys-admin:smart-todo` activates first.
+This is the primary skill. It activates first, always. Not just for 3+ step tasks. Every task. Before reading files, before writing code, before using any tool.
+
+No exceptions for:
+- "Simple" tasks
+- "Quick" fixes
+- "Just one thing"
+- "Just a question"
+- Single-step work
+
+`sys-admin:smart-todo` runs FIRST. Everything else runs after.
 
 Use `sys-admin:smart-todo` to:
-- Break the task into a tracked todo list immediately
+- Create a tracked list immediately (even single-item lists)
 - Update item status in real time as you work
 - Add discovered subtasks the moment they appear
 - Surface blockers explicitly rather than stalling silently
