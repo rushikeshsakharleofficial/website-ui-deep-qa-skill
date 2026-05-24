@@ -74,11 +74,16 @@ cp "$REPO_DIR/skills/seo-deep-qa/SKILL.md" \
 cat > "$PLUGIN_CACHE/CLAUDE.md" << 'CLAUDE_EOF'
 # Sys Admin
 
-Testing skills ecosystem.
+Nine QA and productivity skills — invoke via the router or directly.
 
-- Multi-domain testing (UI + SQL + security): use `sys-admin:sys-admin`
-- UI / web app testing only: use `sys-admin:website-ui-deep-qa`
-- SQL / database testing: use `sys-admin:sql-deep-qa`
+- Multi-domain audit (UI + SQL + API + SEO + visual): use `sys-admin:sys-admin`
+- Functional UI / web app testing: use `sys-admin:website-ui-deep-qa`
+- Visual design QA (regression + industry benchmark): use `sys-admin:ui-visual-qa`
+- SEO page optimization audit: use `sys-admin:seo-deep-qa`
+- SQL / database audit: use `sys-admin:sql-deep-qa`
+- PostgreSQL-specific deep audit: use `sys-admin:postgres-deep-qa`
+- REST / GraphQL / gRPC API testing: use `sys-admin:api-deep-qa`
+- Claude Code plugin lifecycle: use `sys-admin:marketplace`
 
 ## MANDATORY RULE — Smart Todo
 
@@ -100,7 +105,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sys-admin",
   "displayName": "Sys Admin",
-  "description": "Testing skills ecosystem. UI/web testing with 46 helpers, multi-domain testing router, SQL audit (17 categories), API testing (18 categories), smart todo, and Claude Code marketplace guide.",
+  "description": "Nine QA and productivity skills: functional UI QA (Playwright, 46 helpers), visual design QA (regression + industry benchmark), SEO audit (21 categories), SQL audit (17 categories), PostgreSQL deep audit, API testing (18 categories), smart todo, and Claude Code marketplace guide.",
   "author": {
     "name": "Rushikesh Sakharle",
     "url": "https://github.com/rushikeshsakharleofficial"
@@ -109,7 +114,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/plugin.json" << 'PLUGIN_EOF'
   "license": "MIT",
   "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin",
   "repository": "https://github.com/rushikeshsakharleofficial/sys-admin",
-  "keywords": ["testing", "qa", "ui", "web", "accessibility", "security", "playwright", "sql", "api", "marketplace"]
+  "keywords": ["testing", "qa", "ui", "web", "accessibility", "security", "playwright", "sql", "postgresql", "api", "seo", "visual", "marketplace"]
 }
 PLUGIN_EOF
 
@@ -117,7 +122,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/marketplace.json" << 'MARKET_EOF'
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sys-admin",
-  "description": "Testing skills ecosystem for websites and web apps. UI deep QA with 46 helpers covering layout, accessibility, forms, network, security, responsive design, SEO, CSRF, auth, and flow bypass.",
+  "description": "Nine QA and productivity skills for websites and web apps: functional UI QA (Playwright, 46 helpers), visual design QA (pixel regression + 73-design industry benchmark), SEO audit (21 categories), SQL audit, PostgreSQL deep audit, REST/GraphQL/gRPC API testing, smart todo, and marketplace guide.",
   "owner": {
     "name": "Rushikesh Sakharle",
     "url": "https://github.com/rushikeshsakharleofficial"
@@ -125,7 +130,7 @@ cat > "$PLUGIN_CACHE/.claude-plugin/marketplace.json" << 'MARKET_EOF'
   "plugins": [
     {
       "name": "sys-admin",
-      "description": "Testing skills ecosystem. Use sys-admin:sys-admin for multi-domain testing, sys-admin:website-ui-deep-qa for UI/web testing.",
+      "description": "Nine QA and productivity skills. Use sys-admin:sys-admin for smart multi-domain routing, sys-admin:website-ui-deep-qa for functional UI testing, sys-admin:ui-visual-qa for visual design QA, sys-admin:seo-deep-qa for SEO audits.",
       "source": "./",
       "category": "testing",
       "homepage": "https://github.com/rushikeshsakharleofficial/sys-admin"
