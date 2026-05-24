@@ -2,7 +2,7 @@
 
 # sys-admin
 
-**A Claude Code plugin with UI QA, visual design QA, SQL/PostgreSQL auditing, API testing, and task-tracking skills.**  
+**A Claude Code plugin with UI QA, visual design QA, SEO auditing, SQL/PostgreSQL auditing, API testing, and task-tracking skills.**  
 Install once. Invoke from any project. Add your own skills freely.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -15,7 +15,7 @@ Install once. Invoke from any project. Add your own skills freely.
 
 `sys-admin` is an open-source Claude Code plugin that bundles a growing set of QA and productivity skills. Each skill is a focused instruction file Claude loads on demand — no runtime, no server, no build step.
 
-Eight skills ship out of the box: a smart router, deep functional UI QA with Playwright, visual design QA with industry benchmarks, generic SQL auditing, PostgreSQL-specific auditing, REST/GraphQL/gRPC API testing, task tracking, and a Claude Code marketplace guide.
+Nine skills ship out of the box: a smart router, deep functional UI QA with Playwright, visual design QA with industry benchmarks, SEO page optimization auditing, generic SQL auditing, PostgreSQL-specific auditing, REST/GraphQL/gRPC API testing, task tracking, and a Claude Code marketplace guide.
 
 **100% open. Fork it, modify it, add your own skills. MIT licensed.**
 
@@ -31,6 +31,7 @@ Eight skills ship out of the box: a smart router, deep functional UI QA with Pla
 | PostgreSQL deep audit | `/sys-admin:postgres-deep-qa` | PostgreSQL-specific checks: XID wraparound, autovacuum tuning, WAL/replication, PgBouncer gotchas, partitioning, JSONB indexes, advanced index types (BRIN/GiST/GIN/Bloom), 11 RLS bypass vectors, PG16/PG17 features, CVE table, backup strategy (pgBackRest/Barman/WAL-G), postgresql.conf tuning — 17 check categories |
 | API testing | `/sys-admin:api-deep-qa` | Tests REST, GraphQL, and gRPC APIs: OWASP Top 10, JWT/OAuth2 attacks, rate limit bypass, webhooks, contract testing, fuzzing, load testing with k6, HTTP/2 & HTTP/3 — 18 check categories |
 | Visual design QA | `/sys-admin:ui-visual-qa` | Visual layer audit: pixel regression across 5 viewports + 3 browsers, 14-category design quality checks (typography, color, spacing, states, motion, icons, images, responsive, dark mode, skeletons, errors, scroll, z-index, font rendering), industry benchmark vs 73 real-world design references (Stripe, Linear, Vercel, Supabase, and 69 more) |
+| SEO audit | `/sys-admin:seo-deep-qa` | 21-category SEO audit: title tags, meta descriptions, heading hierarchy, Core Web Vitals (LCP/INP/CLS), structured data (Schema.org JSON-LD), Open Graph + Twitter Card, canonical URLs, robots.txt + robots meta, XML sitemap, hreflang, URL structure, internal linking, image SEO, page speed + resource hints, mobile-first indexing, JavaScript SEO, duplicate content, E-E-A-T signals, crawlability + indexability pipeline, breadcrumbs |
 | Smart Todo | `/sys-admin:smart-todo` | **Mandatory for any 3+ step task.** Decomposes work into a tracked list, updates status in real time, surfaces blockers |
 | Marketplace | `/sys-admin:marketplace` | Full Claude Code plugin lifecycle: discover, install, manage scopes, create `plugin.json` + `SKILL.md`, publish to GitHub, submit to community, validate, debug |
 
@@ -46,7 +47,7 @@ cd sys-admin
 bash install.sh
 ```
 
-Restart Claude Code. All eight skills appear in the `/` picker under the `sys-admin:` namespace.
+Restart Claude Code. All nine skills appear in the `/` picker under the `sys-admin:` namespace.
 
 > The script copies skill files to `~/.claude/plugins/cache/sys-admin/`, writes manifests, registers the plugin, and enables it automatically.
 
@@ -186,6 +187,29 @@ Covers all 18 categories:
 - HTTP/2 and HTTP/3: header injection, stream multiplexing, QUIC behavior
 - Content negotiation: type confusion, format downgrade
 - Observability: correlation IDs, structured error shapes, trace propagation
+
+---
+
+### SEO audit
+
+```text
+/sys-admin:seo-deep-qa Audit SEO on https://example.com
+```
+
+Full technical SEO audit across 21 check categories. Works against any live URL or static HTML source. Supports Playwright MCP (live browser), Lighthouse CLI, and `curl`/`fetch` for HTTP-level checks.
+
+Covers:
+
+- **On-page:** title tags (50–60 chars, unique, keyword-first), meta descriptions (150–160 chars, CTA), heading hierarchy (single H1, logical H2–H6, keyword usage)
+- **Core Web Vitals:** LCP < 2.5s, INP < 200ms, CLS < 0.1 — measured via Lighthouse CLI or PageSpeed Insights API, with specific fix guidance (preload LCP image, remove render-blocking resources, add `width`/`height` to images)
+- **Structured data:** Schema.org JSON-LD for Article, Product, FAQ, BreadcrumbList, Organization, WebSite/SearchAction, Review, HowTo, LocalBusiness, VideoObject, Event — validated against Google Rich Results Test
+- **Technical SEO:** canonical URLs (self-referencing, no relative, no redirect target), robots meta + X-Robots-Tag HTTP header, robots.txt (no blocking of CSS/JS, Sitemap directive present), XML sitemap (all indexable pages, no noindex URLs, accurate lastmod)
+- **International:** hreflang (valid BCP 47 codes, `x-default`, bidirectional pairs, absolute URLs)
+- **Page experience:** HTTPS, no intrusive interstitials, mobile-first indexing (viewport meta, content parity, 44×44px touch targets, 16px+ input font)
+- **JavaScript SEO:** SSR detection via `curl` vs rendered comparison, JS-only content flagging, infinite scroll pagination check
+- **Duplicate content:** www/non-www redirect, HTTP→HTTPS, trailing slash consistency, URL parameter canonicals
+- **E-E-A-T signals:** author bio, About/Contact/Privacy pages, `datePublished` in schema, HTTPS, reviews with AggregateRating schema
+- **Crawlability pipeline:** noindex check, redirect chain length (max 1 hop), soft 404 detection, crawl budget waste patterns
 
 ---
 
@@ -345,6 +369,7 @@ skills/
   postgres-deep-qa/SKILL.md   PostgreSQL deep audit — 17 check categories
   api-deep-qa/SKILL.md        API testing skill — 18 check categories
   ui-visual-qa/SKILL.md       visual design QA — regression + 14 quality categories + 73-design benchmark
+  seo-deep-qa/SKILL.md        SEO audit — 21 check categories
   smart-todo/SKILL.md         task tracking skill
   marketplace/SKILL.md        Claude Code plugin lifecycle guide
 tests/deep-ui/
@@ -416,6 +441,8 @@ The SQL audit skill and PostgreSQL deep audit skill run **read-only** by default
 The API testing skill never sends requests to production endpoints that create, modify, or delete real data without explicit confirmation. Automated scanning tools (sqlmap, fuzzing) require authorization context before use.
 
 The visual design QA skill runs **read-only** by default. It never injects CSS into production pages, never modifies DOM or storage, and never overwrites visual regression baselines without an explicit `UPDATE_SNAPSHOTS=true` flag.
+
+The SEO audit skill runs **read-only** against public pages only. It never submits forms, never logs in, and never requests credentials. All HTTP checks use `curl` or `fetch` with read-only GET/HEAD requests.
 
 ---
 

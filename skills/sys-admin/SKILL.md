@@ -28,6 +28,7 @@ Scan the user's request for trigger words. Each word maps to a subskill.
 | plan, track, todo, checklist, steps, list, organize, manage tasks, what's left, progress | `smart-todo` |
 | plugin, skill, marketplace, install plugin, publish plugin, plugin.json, marketplace.json, SKILL.md, claude plugin, /plugin, add marketplace, submit plugin, plugin frontmatter, plugin manifest, plugin namespace, plugin scope | `marketplace` |
 | visual regression, pixel diff, design audit, design quality, component states, spacing grid, design tokens, visual QA, typography audit, color tokens, dark mode broken, animation quality, icon consistency, image quality, loading states, skeleton, error state design, touch targets, z-index, font rendering, does it look good, UI looks bad, compare to Stripe, compare to Linear, compare to Vercel, pixel perfect, screenshot diff, baseline, visual-qa, ui-visual-qa | `ui-visual-qa` |
+| SEO, search engine optimization, title tag, meta description, heading hierarchy, H1, Core Web Vitals, LCP, CLS, INP, structured data, schema.org, JSON-LD, Open Graph, Twitter Card, canonical URL, robots.txt, sitemap, hreflang, URL structure, internal linking, image SEO, alt text, page speed, mobile-first indexing, JavaScript SEO, duplicate content, E-E-A-T, crawlability, indexability, breadcrumbs, page experience, not indexed, Google Search Console, Lighthouse, rich results, noindex, sitemap errors, ranking | `seo-deep-qa` |
 
 ---
 
@@ -50,12 +51,14 @@ When multiple subskills are needed, always run in this order:
 ```
 1. smart-todo          ← ALWAYS FIRST if task has 3+ steps (mandatory)
 2. sql-deep-qa         ← security/data risk highest; run before UI
-3. api-deep-qa         ← API surface before UI layer
-4. website-ui-deep-qa  ← functional UI layer
-5. ui-visual-qa        ← visual design layer last (runs on top of functional checks)
+3. postgres-deep-qa    ← PostgreSQL-specific (run alongside sql-deep-qa when PG keywords detected)
+4. api-deep-qa         ← API surface before UI layer
+5. seo-deep-qa         ← SEO/crawlability (run before UI checks — indexability is foundational)
+6. website-ui-deep-qa  ← functional UI layer
+7. ui-visual-qa        ← visual design layer last (runs on top of functional checks)
 ```
 
-**Rationale:** Data and API vulnerabilities are higher severity than UI defects. Functional correctness before visual polish. `ui-visual-qa` runs after `website-ui-deep-qa` since visual checks assume functional correctness.
+**Rationale:** Data and API vulnerabilities are higher severity than UI defects. SEO indexability issues prevent pages from being found at all — fix before UI polish. Functional correctness before visual polish.
 
 Example multi-domain dispatch:
 
@@ -138,6 +141,7 @@ When smart-todo activates:
 | Claude Code plugin / marketplace | `marketplace` | Full plugin lifecycle: discover, install, manage scopes, create plugin.json + SKILL.md, publish to GitHub, submit to community, validate, debug | ✅ Active |
 | PostgreSQL deep audit | `postgres-deep-qa` | 17 categories: XID wraparound, autovacuum, WAL/replication, PgBouncer gotchas, partitioning, JSONB/advanced indexes, FTS, lock monitoring, RLS bypass vectors (11), sequences/IDENTITY, FDW, extensions, monitoring queries, backup strategy, postgresql.conf tuning, anti-patterns, compliance | ✅ Active |
 | Visual design QA | `ui-visual-qa` | 3 phases: visual regression (pixel diff, all viewports), design quality (14 categories: typography, color, spacing, states, motion, icons, images, responsive, dark mode, skeletons, errors, scroll, z-index, font rendering), industry benchmark (73-design reference map from awesome-design-md, condition-based selection) | ✅ Active |
+| SEO page optimization | `seo-deep-qa` | 21 check categories: title tags, meta descriptions, heading hierarchy, Core Web Vitals (LCP/INP/CLS), structured data (Schema.org/JSON-LD), Open Graph + Twitter Card, canonical URLs, robots meta + X-Robots-Tag, robots.txt, XML sitemap, hreflang, URL structure, internal linking, image SEO, page speed + resource hints, mobile-first indexing, JavaScript SEO, duplicate content, E-E-A-T signals, crawlability + indexability pipeline, breadcrumbs | ✅ Active |
 | Backend contracts, REST rate limits | — | — | Planned |
 | Security deep dive (OWASP, CVEs, dep scan) | — | — | Planned |
 | Test quality (coverage, flaky, mutation) | — | — | Planned |

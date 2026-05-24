@@ -65,6 +65,11 @@ mkdir -p "$PLUGIN_CACHE/skills/ui-visual-qa"
 cp "$REPO_DIR/skills/ui-visual-qa/SKILL.md" \
    "$PLUGIN_CACHE/skills/ui-visual-qa/SKILL.md"
 
+# seo-deep-qa subskill
+mkdir -p "$PLUGIN_CACHE/skills/seo-deep-qa"
+cp "$REPO_DIR/skills/seo-deep-qa/SKILL.md" \
+   "$PLUGIN_CACHE/skills/seo-deep-qa/SKILL.md"
+
 # Plugin CLAUDE.md
 cat > "$PLUGIN_CACHE/CLAUDE.md" << 'CLAUDE_EOF'
 # Sys Admin
@@ -194,5 +199,6 @@ echo "   /sys-admin:api-deep-qa         — API testing (18 categories)"
 echo "   /sys-admin:smart-todo          — task tracking (auto for 3+ step tasks)"
 echo "   /sys-admin:marketplace         — Claude Code plugin lifecycle"
 echo "   /sys-admin:ui-visual-qa        — visual QA (regression + design quality + industry benchmark)"
+echo "   /sys-admin:seo-deep-qa         — SEO audit (21 check categories)"
 echo ""
 echo "   Restart Claude Code to load the new plugin."
